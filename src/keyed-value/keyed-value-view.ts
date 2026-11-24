@@ -1,5 +1,5 @@
-import { isConstructor } from "./class-constructor.ts";
-import type { Result } from "./result.ts";
+import type { Result } from "../result.ts";
+import { isConstructor } from "../runtime/class-constructor.ts";
 
 type MemberValues<Value> = { [Key in keyof Value]: GuardedValue<Value[Key]> };
 type DataKeys<Value> = {

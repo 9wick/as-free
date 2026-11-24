@@ -1,5 +1,9 @@
-import { collectKeyedValues, collectKeyedValuesSync, createKeyedValueView, fromEntries } from "../src/index.ts";
-import type { CompatibleKeyedMethods } from "../src/keyed-collection.ts";
+import { createKeyedValueView, fromEntries } from "type-proof";
+import {
+  collectKeyedValues,
+  collectKeyedValuesSync,
+  type CompatibleKeyedMethods,
+} from "type-proof/legacy";
 
 function equal(actual: unknown, expected: unknown): void {
   if (!Object.is(actual, expected)) throw new Error("Unexpected keyed collection value");
@@ -10,6 +14,25 @@ const port: 3001 = config.port;
 const host: "localhost" = config.host;
 equal(port, 3001);
 equal(host, "localhost");
+
+let callsAfterConversion = 0;
+const count = (value: number) => {
+  callsAfterConversion++;
+  return value * 2;
+};
+const label = async (value: number) => {
+  callsAfterConversion++;
+  return `残り ${value} 個`;
+};
+const handlers = fromEntries([["count", count], ["label", label]] as const);
+equal(callsAfterConversion, 0);
+equal(handlers.count, count);
+equal(handlers.label, label);
+const amount: number = handlers.count(3);
+const pendingLabel: Promise<string> = handlers.label(3);
+equal(amount, 6);
+equal(await pendingLabel, "残り 3 個");
+equal(callsAfterConversion, 2);
 
 const customPairs = [["port", 3000]] as const;
 Object.assign(customPairs, { [Symbol.iterator]: () => customPairs.slice(0, 0).values() });

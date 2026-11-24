@@ -1,4 +1,5 @@
-import { KeyedValueStore, ValueKey, resolveNamedValues } from "../src/index.ts";
+import { KeyedValueStore, ValueKey } from "type-proof";
+import { resolveNamedValues } from "type-proof/legacy";
 
 function readPort(context: { port: number }): number;
 function readPort(context: string): string;

@@ -1,4 +1,4 @@
-import type { Result } from "./result.ts";
+import type { Result } from "../result.ts";
 
 export type JsonError<DecodeError> =
   | { readonly kind: "invalid-json"; readonly cause: SyntaxError }

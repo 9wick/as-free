@@ -1,12 +1,4 @@
-type Key = string | symbol;
-
-type IsUnion<T, All = T> = T extends All ? ([All] extends [T] ? false : true) : never;
-
-type SingletonKey<K extends Key> = true extends IsUnion<K>
-  ? never
-  : {} extends Record<K, never>
-    ? never
-    : K;
+import type { Key, SingleKey } from "./from-entries.ts";
 
 type WithValue<Values, K extends Key, V> = Readonly<Omit<Values, K> & Record<K, V>>;
 
@@ -24,7 +16,7 @@ export class NamedValues<Context, Values extends object> {
   }
 
   with<const K extends Key, V>(
-    key: K & SingletonKey<K>,
+    key: K & SingleKey<K>,
     resolveIn: (context: Context) => V,
   ): NamedValues<Context, WithValue<Values, K, V>> {
     const value = resolveIn(this.#context);

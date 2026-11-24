@@ -1,4 +1,4 @@
-import type { Result } from "./result.ts";
+import type { Result } from "../result.ts";
 
 export type CallError =
   | { readonly kind: "not-callable" }
