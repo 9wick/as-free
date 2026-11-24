@@ -1,5 +1,26 @@
 # keyed-value
 
+## 一覧からキー付きのオブジェクトを作る
+
+`toEntries(items, keyField, valueField)` は、各要素の指定した2つのフィールドを `[key, value]` にします。固定長の `readonly` タプルを渡すと、各位置のキーと値の型を保ったペアが得られます。
+
+```ts
+import { fromEntries, toEntries } from "type-proof"
+
+const items = [
+	{ name: "price", value: 300 },
+	{ name: "title", value: "ノート" },
+] as const
+
+const pairs = toEntries(items, "name", "value")
+const product = fromEntries(pairs)
+
+product.price // 型は 300
+product.title // 型は "ノート"
+```
+
+通常の配列を渡す場合、同じペアのキーと値の型は対応しますが、結果の長さは配列型のままです。`fromEntries` に渡すには、入力に各ペアが揃っていることが型で分かる必要があります。
+
 ## ペアからオブジェクトを作る
 
 手元にある `[key, value]` のペアを `fromEntries` に渡します。キーと値のリテラル型を保ったオブジェクトを受け取れます。
