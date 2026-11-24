@@ -1,10 +1,15 @@
 {
   "name": "type-proof",
   "version": "0.0.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./runtime": "./src/runtime.ts"
+  },
   "scripts": {
+    "test": "pnpm typecheck && node --test tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
