@@ -10,7 +10,7 @@ English | [日本語](README.ja.md)
 
 ## Overview
 
-In TypeScript, there are cases where you *know* a value's exact type at runtime, yet the type system loses it—such as `Object.fromEntries()`, `JSON.parse()` round-trips, typed heterogenous stores, or forwarding overloaded functions.
+In TypeScript, there are cases where you _know_ a value's exact type at runtime, yet the type system loses it—such as `Object.fromEntries()`, `JSON.parse()` round-trips, typed heterogenous stores, or forwarding overloaded functions.
 
 `as-free` encapsulates the unavoidable `as` assertions inside small, contract-enforced utilities so your application code gets precise types through normal type checking alone.
 
@@ -126,13 +126,13 @@ if (isConstructor(candidate)) {
 
 ## Modules
 
-| Module | Import | Purpose | Docs |
-| --- | --- | --- | --- |
-| `keyed-value` | `as-free` | `fromEntries`, `mapValues` preserving key/value types | [keyed-value](src/keyed-value/README.md) |
-| `json` | `as-free` | `createJsonStore` preserving `T` across JSON serialization | [json](src/json/README.md) |
-| `value-store` | `as-free` | `KeyedValueStore` / `ValueKey` and `createKeyedValueView` | [value-store](src/value-store/README.md) |
-| `callable` | `as-free` | `defineForwarder`, `whenArg`, `isFunction` | [callable](src/callable/README.md) |
-| `runtime` | `as-free/runtime` | `isConstructor` runtime check | [runtime](src/runtime/README.md) |
+| Module        | Import            | Purpose                                                    | Docs                                     |
+| ------------- | ----------------- | ---------------------------------------------------------- | ---------------------------------------- |
+| `keyed-value` | `as-free`         | `fromEntries`, `mapValues` preserving key/value types      | [keyed-value](src/keyed-value/README.md) |
+| `json`        | `as-free`         | `createJsonStore` preserving `T` across JSON serialization | [json](src/json/README.md)               |
+| `value-store` | `as-free`         | `KeyedValueStore` / `ValueKey` and `createKeyedValueView`  | [value-store](src/value-store/README.md) |
+| `callable`    | `as-free`         | `defineForwarder`, `whenArg`, `isFunction`                 | [callable](src/callable/README.md)       |
+| `runtime`     | `as-free/runtime` | `isConstructor` runtime check                              | [runtime](src/runtime/README.md)         |
 
 ## Documentation
 

@@ -36,12 +36,12 @@ If `readString` returns no value, `get` fails. When `get` succeeds, `value` is g
 
 Inspect `error.kind` to distinguish failure causes:
 
-| Function | `error.kind` | Meaning |
-| --- | --- | --- |
-| `get` | `not-found` | `readString` returned `null` or `undefined` |
-| `get` | `invalid-json` | The stored string could not be parsed as JSON (`error.cause` is `SyntaxError`) |
-| `set` | `non-finite-number` | The value contains `NaN` or `Infinity` (not stored because JSON turns them into `null`) |
-| `set` | `not-serializable` | Serialization failed, e.g. due to circular references (`error.cause` is `TypeError`) |
+| Function | `error.kind`        | Meaning                                                                                 |
+| -------- | ------------------- | --------------------------------------------------------------------------------------- |
+| `get`    | `not-found`         | `readString` returned `null` or `undefined`                                             |
+| `get`    | `invalid-json`      | The stored string could not be parsed as JSON (`error.cause` is `SyntaxError`)          |
+| `set`    | `non-finite-number` | The value contains `NaN` or `Infinity` (not stored because JSON turns them into `null`) |
+| `set`    | `not-serializable`  | Serialization failed, e.g. due to circular references (`error.cause` is `TypeError`)    |
 
 ```ts
 const result = await products.get("note");
