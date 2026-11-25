@@ -1,98 +1,153 @@
 # as-free
 
-このパッケージは **「型安全だとわかっているのに、言語機能が足りなくて安全にできない」** 場合に使うものです。
-必要な型アサーションをユーティリティの中に閉じ込め、アプリは `as` を書かずに精密な型を受け取れます。
+[![CI](https://github.com/9wick/as-free/actions/workflows/ci.yml/badge.svg)](https://github.com/9wick/as-free/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/as-free)](https://www.npmjs.com/package/as-free)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-典型例:
+English | [日本語](README.ja.md)
 
-- `Object.entries()` / `Object.fromEntries()` すると型が消える
-- `JSON.parse()` の戻り値が `unknown` になる
-- DI コンテナが返す値の型パラメータが消える
+**Type-preserving TypeScript utilities so your application code needs no `as`.**
 
-### 1. 何の保証もない `as`
+## Overview
 
-型が合わないのでとりあえず黙らせるキャスト。最も危険。
+In TypeScript, there are cases where you *know* a value's exact type at runtime, yet the type system loses it—such as `Object.fromEntries()`, `JSON.parse()` round-trips, typed heterogenous stores, or forwarding overloaded functions.
 
-```ts
-const value = someFunction() as MyType; // 根拠なし
+`as-free` encapsulates the unavoidable `as` assertions inside small, contract-enforced utilities so your application code gets precise types through normal type checking alone.
+
+> **Out of scope:** Unchecked casts, validation-boundary casts, test mocks, and broken third-party `@types` workarounds. For the full taxonomy of `as` casts and our utility acceptance criteria, see [Scope & Design Criteria](docs/scope.md).
+
+## Installation
+
+```bash
+npm install as-free
+# or
+pnpm add as-free
 ```
 
-### 2. 信頼境界の `as`
+`as-free` is ESM-only and ships bundled `.d.mts` type declarations.
 
-外部入力（API レスポンス、JSON など）にバリデーション付きで型を与えるキャスト。
-バリデーションの正しさに依存する。
+## Usage
+
+### Type-preserving object transforms (`fromEntries`, `mapValues`)
+
+Keep literal key and value types across `fromEntries` and `mapValues`:
 
 ```ts
-const parsed = schema.parse(JSON.parse(raw)) as Config;
+import { fromEntries, mapValues } from "as-free";
+
+const product = fromEntries([
+  ["name", "Notebook"],
+  ["price", 300],
+] as const);
+product.name; // "Notebook"
+product.price; // 300
+
+const boxes = { price: { value: 300 }, title: { value: "Notebook" } };
+const values = mapValues(boxes, (box) => box.value);
+values.price; // number
+values.title; // string
 ```
 
-### 3. 言語機能不足を補う `as`
+### Typed JSON storage (`createJsonStore`)
 
-ランタイムでは正しいことが保証されているが、TypeScript の型システムが表現できないキャスト。
-**このパッケージが対象とするスコープ。**
-
-いくつかの小分類がある:
-
-#### 3a. 型推論の限界
-
-ジェネリクスや高階型の推論が追いつかないケース。
+Pair `set` and `get` under a single JSON-round-trippable type `T` with `Result`-based error handling:
 
 ```ts
-// Object.entries() はキーを string に拡げてしまう
-const entries = Object.entries(record) as [keyof T, T[keyof T]][];
-```
+import { createJsonStore } from "as-free";
 
-#### 3b. ナローイング補助
+type Product = { name: string; price: number };
 
-型ガードや discriminated union で絞り込んだ後、コンパイラが推論しきれないケース。
+const products = createJsonStore<Product>({
+  readString: (key) => redis.get(`product:${key}`),
+  writeString: (key, text) => redis.set(`product:${key}`, text),
+});
 
-```ts
-// switch で全ケースを網羅しているが、コンパイラが絞りきれない末端
-function handle(action: Action) {
-  switch (action.type) {
-    case "create":
-      return processCreate(action as CreateAction);
-    // ...
-  }
+await products.set("note", { name: "Notebook", price: 300 });
+
+const result = await products.get("note");
+if (result.type === "Success") {
+  result.value; // Product
 }
 ```
 
-> **推奨:** このケースは `ts-pattern` の `match().exhaustive()` を使えば `as` なしで型安全にナローイングできる。標準の `switch` 構文の制約であり、言語機能自体の不足ではないため、`as` ではなく `ts-pattern` の利用を推奨する。
+### Typed key-value store & lifetime views (`KeyedValueStore`, `createKeyedValueView`)
 
-### 4. テストモックの `as`
-
-テストでオブジェクトの一部だけ用意するためのキャスト。プロダクションコードには入らない。
+Store differently typed values in one store using invariant `ValueKey<T>` tokens, or guard object access with a lifetime check:
 
 ```ts
-const mockUser = { name: "test" } as User;
+import { KeyedValueStore, ValueKey } from "as-free";
+
+const store = new KeyedValueStore();
+const title = new ValueKey<string>();
+const quantity = new ValueKey<number>();
+
+store.set(title, "Notebook");
+store.set(quantity, 12);
+
+store.get(title); // string | undefined
+store.get(quantity); // number | undefined
 ```
 
-### 5. ライブラリ型定義の不備を回避する `as`
+### Overload-preserving forwarding (`defineForwarder`, `whenArg`, `isFunction`)
 
-サードパーティの `@types` が不正確・古い場合に正しい型へ矯正するキャスト。
-外部要因に依存するため、型定義の更新で不要になることがある。
+Wrap or dispatch calls without losing overload signatures or generic parameters:
 
 ```ts
-// @types/xxx が返り値を string としているが、実際は string | null
-const result = lib.getValue() as string | null;
+import { defineForwarder } from "as-free";
+
+type Format = {
+  (value: number, digits: number): string;
+  (value: Date): string;
+};
+
+declare const format: Format;
+
+const countedFormat = defineForwarder<[Format]>((args, forward) => {
+  return forward(format, args);
+});
+
+countedFormat(3.14159, 2); // string
+countedFormat(new Date()); // string
 ```
 
----
+### Runtime constructor check (`as-free/runtime`)
 
-**このパッケージは分類 3（言語機能不足を補う `as`）のみを対象とする。** それ以外の `as` は、それぞれ適切な場所（バリデーション層、テストユーティリティなど）で管理すべきである。
+Check whether an `unknown` value has `[[Construct]]` without invoking it or touching `prototype`:
 
-## 採用基準
+```ts
+import { isConstructor } from "as-free/runtime";
 
-型アサーションを使うユーティリティには、以下のすべてが必要です。
+const candidate: unknown = Date;
 
-1. 受け付ける入力の契約と実装から、宣言した戻り値型が実行時に成立することを説明できる。
-2. TypeScript の型検査だけでは、その型の関係を保ったまま処理を書けない。
-3. 型アサーションを関数内に閉じ込めることで、アプリは通常の型検査が効く呼び出しだけで使える。
+if (isConstructor(candidate)) {
+  console.log(new Date(0) instanceof candidate); // true
+}
+```
 
-## モジュール
+## Modules
 
-- [keyed-value](src/keyed-value/README.md) は、キーと値の型の対応を保つ変換を扱います。
-- [json](src/json/README.md) は、JSON にして保管した値を、同じ型で取り出します。
-- [value-store](src/value-store/README.md) は、有効期間を持つ参照と、型付きキーでの保管を扱います。
-- [callable](src/callable/README.md) は、オーバーロードを保ったまま関数の呼び出しを転送します。
-- [runtime](src/runtime/README.md) は、コンストラクタの判定を扱います。
+| Module | Import | Purpose | Docs |
+| --- | --- | --- | --- |
+| `keyed-value` | `as-free` | `fromEntries`, `mapValues` preserving key/value types | [keyed-value](src/keyed-value/README.md) |
+| `json` | `as-free` | `createJsonStore` preserving `T` across JSON serialization | [json](src/json/README.md) |
+| `value-store` | `as-free` | `KeyedValueStore` / `ValueKey` and `createKeyedValueView` | [value-store](src/value-store/README.md) |
+| `callable` | `as-free` | `defineForwarder`, `whenArg`, `isFunction` | [callable](src/callable/README.md) |
+| `runtime` | `as-free/runtime` | `isConstructor` runtime check | [runtime](src/runtime/README.md) |
+
+## Documentation
+
+- [Scope & Design Criteria](docs/scope.md) — Which `as` casts this package targets and how utilities are evaluated
+- Module guides: [keyed-value](src/keyed-value/README.md) · [json](src/json/README.md) · [value-store](src/value-store/README.md) · [callable](src/callable/README.md) · [runtime](src/runtime/README.md)
+
+## Development
+
+```bash
+pnpm install
+vp check      # lint, format, and type check
+vp run test   # run tests
+vp run build  # build dist/
+```
+
+## License
+
+[MIT](LICENSE)

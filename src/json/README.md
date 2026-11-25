@@ -1,8 +1,10 @@
 # json
 
-## 型を保ったまま保管して取り出す
+English | [日本語](README.ja.md) · [Back to README](../../README.md)
 
-`createJsonStore<T>` に、文字列を読む関数と書く関数を渡します。`T` を JSON にして保管する `set` と、取り出して `T` として返す `get` の対を受け取れます。
+## Store and retrieve values with their types preserved
+
+Pass string reader and writer functions to `createJsonStore<T>`. You get back a `set` function that serializes `T` to JSON and a `get` function that retrieves it as `T`:
 
 ```ts
 import { createJsonStore } from "as-free";
@@ -14,7 +16,7 @@ const products = createJsonStore<Product>({
   writeString: (key, text) => redis.set(`product:${key}`, text),
 });
 
-await products.set("note", { name: "ノート", price: 300 });
+await products.set("note", { name: "Notebook", price: 300 });
 
 const result = await products.get("note");
 if (result.type === "Success") {
@@ -22,61 +24,61 @@ if (result.type === "Success") {
 }
 ```
 
-`readString` と `writeString` は同期でも非同期でも渡せます。`get` と `set` は常に `Promise` を返し、結果は `Result` で受け取ります。
+Both `readString` and `writeString` may be synchronous or asynchronous. `get` and `set` always return a `Promise` wrapping a `Result`.
 
-保管先への接続、キーの prefix、有効期限などは `readString` と `writeString` の中に書きます。このモジュールが受け持つのは、JSON への変換と、`get` と `set` の型の結び付けだけです。
+Connection handling, key prefixes, TTLs, and similar storage concerns belong inside `readString` and `writeString`. This module handles only JSON conversion and tying the types of `get` and `set` together.
 
-## 結果の受け取り方
+## Handling results
 
-`get` と `set` の結果は、成功なら `{ type: "Success", value }`、失敗なら `{ type: "Failure", error }` です。
+Results from `get` and `set` are `{ type: "Success", value }` on success, or `{ type: "Failure", error }` on failure.
 
-`readString` が値を返さなかったとき、`get` の結果は失敗です。成功したときの `value` は必ず `T` です。
+If `readString` returns no value, `get` fails. When `get` succeeds, `value` is guaranteed to have type `T`.
 
-失敗の理由は `error.kind` で見分けます。
+Inspect `error.kind` to distinguish failure causes:
 
-| 関数  | `error.kind`        | 意味                                                                                 |
-| ----- | ------------------- | ------------------------------------------------------------------------------------ |
-| `get` | `not-found`         | `readString` が `null` か `undefined` を返した                                       |
-| `get` | `invalid-json`      | 読んだ文字列を JSON として復元できなかった。`error.cause` は `SyntaxError`           |
-| `set` | `non-finite-number` | 値に `NaN` か `Infinity` が含まれている。JSON にすると `null` になるため保管しません |
-| `set` | `not-serializable`  | 循環参照などで JSON にできなかった。`error.cause` は `TypeError`                     |
+| Function | `error.kind` | Meaning |
+| --- | --- | --- |
+| `get` | `not-found` | `readString` returned `null` or `undefined` |
+| `get` | `invalid-json` | The stored string could not be parsed as JSON (`error.cause` is `SyntaxError`) |
+| `set` | `non-finite-number` | The value contains `NaN` or `Infinity` (not stored because JSON turns them into `null`) |
+| `set` | `not-serializable` | Serialization failed, e.g. due to circular references (`error.cause` is `TypeError`) |
 
 ```ts
 const result = await products.get("note");
 if (result.type === "Failure" && result.error.kind === "not-found") {
-  await products.set("note", { name: "ノート", price: 300 });
+  await products.set("note", { name: "Notebook", price: 300 });
 }
 ```
 
-`readString` と `writeString` が投げた例外は、`get` と `set` からそのまま投げられます。
+Exceptions thrown by `readString` or `writeString` propagate directly from `get` and `set`.
 
-## 型が保たれる根拠
+## Why the type is sound
 
-`get` が返す値の型を `T` と言える理由は、次の三つです。
+`get` can safely return `T` for three reasons:
 
-- `get` と `set` は一つの `T` から一緒に作られます。`get` に型引数はなく、読む側が型を選べません。
-- `set` は `T` の値だけを受け取ります。
-- JSON からの復元は、`readString` が返した文字列にだけ適用されます。任意の文字列を `T` として読む関数はありません。
+- `get` and `set` are created together from a single `T`. `get` has no type parameter, so readers cannot pick an arbitrary type.
+- `set` accepts only values of type `T`.
+- JSON parsing runs exclusively on strings returned by `readString`; there is no generic function that parses arbitrary strings as `T`.
 
-保証するのは、このプログラムのコードが自分自身と矛盾しないことです。保管されている値の形は検証しません。
+This guarantees consistency within your program's own reads and writes; it does not perform runtime schema validation on stored payloads.
 
-## 保管できる型
+## Supported types
 
-変換の方式は `JSON.stringify` と `JSON.parse` に固定です。`T` に指定できるのは、JSON にして戻しても形が変わらない型だけです。
+Serialization uses `JSON.stringify` and `JSON.parse` directly. Only types whose shape survives a JSON round-trip unmodified can be passed as `T`:
 
 ```ts
-createJsonStore<{ name: string; tags: string[] }>({ readString, writeString }); // 指定できる
+createJsonStore<{ name: string; tags: string[] }>({ readString, writeString }); // OK
 
-createJsonStore<{ createdAt: Date }>({ readString, writeString }); // コンパイルエラー
+createJsonStore<{ createdAt: Date }>({ readString, writeString }); // Compile error
 ```
 
-`Date` は JSON にすると文字列になり、`Map` は `{}` になり、`undefined` のプロパティは消えます。こうした型は、戻したときに `T` と一致しないため指定できません。日時を保管するときは、ISO 形式の文字列など、JSON でそのまま表せる型に直してから渡します。
+`Date` serializes to a string, `Map` serializes to `{}`, and `undefined` properties disappear. Because they do not match `T` after round-tripping, they are rejected at compile time. Convert timestamps to ISO strings or other JSON-native representations first.
 
-## 利用する側が守る前提
+## Caller responsibilities
 
-次の点は型で確かめられないため、利用する側が守ります。
+The following cannot be enforced by the type system and must be maintained by the caller:
 
-- `readString(key)` は、同じ `key` で `writeString` した文字列を返す。`readString` と `writeString` で prefix がずれていると、別の値を `T` として読むことになります。
-- 同じ保管場所に対して、異なる `T` で `createJsonStore` を呼ばない。保管場所ごとの型の定義は一か所に置きます。
-- 保管されている値の形を変えるときは、移行を別に行う。以前の版が書いた値や、ほかのシステムが書いた値は、このモジュールの保証の対象外です。DB のスキーマを変えるときと同じ扱いです。
-- データだけを持つクラスのインスタンスを渡さない。型の上では普通のオブジェクトと区別できず、取り出した値はプロトタイプを持ちません。
+- `readString(key)` must return the string written by `writeString` for the same `key` (keep prefixes consistent).
+- Do not call `createJsonStore` with different types `T` against the same backing store; define the store's type in one place.
+- Handle data migrations separately when changing the shape of `T`. Values written by older versions or external systems are outside this module's guarantees, just like database schema changes.
+- Do not pass class instances carrying data—the type system cannot distinguish them from plain objects, and retrieved values will not have prototypes.

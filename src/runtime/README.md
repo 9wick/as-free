@@ -1,10 +1,12 @@
-# 実行時の検証
+# runtime
 
-`as-free/runtime` は、外部入力や動的な値を扱うときに使います。
+English | [日本語](README.ja.md) · [Back to README](../../README.md)
 
-## コンストラクタかどうかを判定する
+`as-free/runtime` provides runtime type guards for external inputs and dynamic values.
 
-`isConstructor(value)` は JavaScript の `[[Construct]]` を持つかを判定し、成功時は `Constructor` 型に絞り込みます。Proxy を使い、対象のコンストラクタ本体を呼び出さず、`prototype` にも触れずに判定します。 [ECMAScript 仕様](https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-proxycreate)
+## Check whether a value is a constructor
+
+`isConstructor(value)` checks whether a value has JavaScript's `[[Construct]]` internal method and narrows it to `Constructor` (`abstract new (...args: never[]) => object`). It uses a `Proxy` probe so it neither invokes the constructor body nor accesses `prototype`. See the [ECMAScript specification](https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-proxycreate).
 
 ```ts
 import { isConstructor } from "as-free/runtime";
