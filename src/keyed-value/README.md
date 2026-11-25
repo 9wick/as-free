@@ -66,8 +66,6 @@ results.count // number
 results.label // Promise<string>
 ```
 
-キーごとの型になるのは、受け取った値からプロパティを読んだ結果、関数を呼んだ結果、それを `await` した結果です。`String(box.value)` のように計算した結果は、全キーで同じ型になります。
-
 名前を持つ要素の配列は、`[名前, 値]` のペアに写してから `fromEntries` に渡します。
 
 ```ts
