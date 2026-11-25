@@ -2,12 +2,12 @@
 // function types, constructor types and classes whose members are all private, which {} is not.
 type Omittable<P> = [keyof P] extends [never] ? ([{}] extends [P] ? true : false) : false;
 
-export type OptionalWhenEmpty<F extends PropertyKey, P> = { readonly [_ in F]?: P } & (Omittable<P> extends true
+export type OmittableIfEmpty<F extends PropertyKey, P> = { readonly [_ in F]?: P } & (Omittable<P> extends true
   ? unknown
   : { readonly [_ in F]: P });
 
-export const fieldOrEmpty = <const F extends PropertyKey, P extends object>(
-  holder: OptionalWhenEmpty<F, P>,
+export const getOrEmpty = <const F extends PropertyKey, P extends object>(
+  holder: OmittableIfEmpty<F, P>,
   field: F,
 ): P => {
   const value: P | undefined = holder[field];

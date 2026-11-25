@@ -93,25 +93,3 @@ const readByName = <const Fields extends readonly Field[]>(list: Fields) =>
 ```
 
 When calling `mapValues` nested inside another `mapValues` mapper, returning the outer received value directly from the inner mapper results in a compile error. Calling an overloaded function inside the mapper also does not preserve per-key return types.
-
-## Read a field that may be left out only when empty
-
-To make a field of type `P` optional only when `P` has no key, build the type with `OptionalWhenEmpty`. Inside a generic function, `fieldOrEmpty` reads the field as a value of type `P`. When the field is left out, it returns an empty object.
-
-```ts
-import { fieldOrEmpty, type OptionalWhenEmpty } from "as-free";
-
-type Job<P> = { readonly run: (input: P) => void } & OptionalWhenEmpty<"input", P>;
-
-const runJob = <P extends object>(job: Job<P>) => job.run(fieldOrEmpty<"input", P>(job, "input"));
-
-runJob({ run: () => {} });
-runJob({ input: { id: 1 }, run: ({ id }) => console.log(id) });
-```
-
-`P` is not inferred, so pass it explicitly along with the field name.
-
-The field cannot be left out for the following `P`, and doing so is a compile error:
-
-- A type with any key, including optional keys and index signatures such as `Record<string, X>`.
-- Function types, constructor types, and classes whose members are all private. An empty object is not a value of these.
