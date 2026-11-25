@@ -68,22 +68,28 @@ results.label // Promise<string>
 
 キーごとの型になるのは、受け取った値からプロパティを読んだ結果、関数を呼んだ結果、それを `await` した結果です。`String(box.value)` のように計算した結果は、全キーで同じ型になります。
 
-型引数のまま受け取った値にも使えます。名前を持つ要素の配列は、`[名前, 値]` のペアに写してから `fromEntries` に渡します。
+名前を持つ要素の配列は、`[名前, 値]` のペアに写してから `fromEntries` に渡します。
 
 ```ts
 import { fromEntries, mapValues } from "type-proof"
 
-type Field = { readonly name: string; read(): unknown }
-
-const readByName = async <const Fields extends readonly Field[]>(fields: Fields) =>
-	fromEntries(await Promise.all(mapValues(fields, async (field) => [field.name, await field.read()] as const)))
-
-const product = await readByName([
+const fields = [
 	{ name: "price", read: () => 300 },
-	{ name: "title", read: async () => "ノート" },
-])
+	{ name: "title", read: () => "ノート" },
+] as const
+
+const product = fromEntries(mapValues(fields, (field) => [field.name, field.read()] as const))
 product.price // number
 product.title // string
+```
+
+この処理を関数にまとめるときは、引数の型が広がらないように、渡された値の型を型引数で受け取ります。
+
+```ts
+type Field = { readonly name: string; read(): unknown }
+
+const readByName = <const Fields extends readonly Field[]>(list: Fields) =>
+	fromEntries(mapValues(list, (field) => [field.name, field.read()] as const))
 ```
 
 `mapValues` の関数の中でもう一度 `mapValues` を呼ぶとき、外側で受け取った値を内側からそのまま返すとコンパイルエラーになります。オーバーロードのある関数を呼んだ結果は、キーごとの型になりません。
