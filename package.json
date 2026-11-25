@@ -9,7 +9,7 @@
     "./runtime": "./src/runtime/index.ts"
   },
   "scripts": {
-    "test": "pnpm typecheck && node --test tests/*.test.ts",
+    "test": "pnpm typecheck && node --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
