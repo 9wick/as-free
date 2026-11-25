@@ -71,22 +71,32 @@ const label = await handlers.label(3) // string
 
 ## すべての値を写す
 
-`mapValues` は配列の `map` のオブジェクト版です。2つ目の引数の関数をすべての値に適用し、結果を同じキーに置きます。
+`mapValues` は配列の `map` のオブジェクト版です。2つ目の引数の関数をすべての値に適用し、結果を同じキーに置きます。型引数は書きません。
 
 ```ts
 import { mapValues } from "type-proof"
 
-type Boxes<R> = { readonly [K in keyof R]: { readonly value: R[K] } }
+const doubled = mapValues({ a: 1, b: 2 }, (n) => n * 2)
+// { a: number; b: number }
 
-const unboxAll = <R>(boxes: Boxes<R>) =>
-	mapValues<Boxes<R>, R>(boxes, (box) => box.value)
-
-const product = unboxAll({ price: { value: 300 }, title: { value: "ノート" } })
-product.price // number
-product.title // string
+const boxes = { price: { value: 300 }, title: { value: "ノート" } }
+const values = mapValues(boxes, (box) => box.value)
+// { price: string | number; title: string | number }
 ```
 
-型引数は、入力の型と結果の型です。入力の型(`Boxes<R>`)を結果の型 `R` から書くと、渡した関数を TypeScript が検査します。`() => 123` のように対応を崩す関数は、利用側でコンパイルエラーになります。省略できるキーは、結果でも省略できるキーになります。
+値の型がキーごとに違うと、結果の型は全キー共通になります。TypeScript は、渡された関数をキーごとに当てはめた型を計算できないためです。型が実際の値と食い違うことはありません。
+
+キーごとの型を保つには、入力の型を結果の型 `R` から書いた関数の中で呼びます。
+
+```ts
+const unboxAll = <R>(source: { readonly [K in keyof R]: { readonly value: R[K] } }) =>
+	mapValues(source, (box) => box.value)
+
+const product = unboxAll(boxes)
+// { price: number; title: string }
+```
+
+省略できるキーは、結果でも省略できるキーになります。
 
 名前を持つ要素の配列は、`mapValues` で `[名前, 値]` のペアに写してから `fromEntries` に渡します。
 

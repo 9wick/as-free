@@ -84,3 +84,31 @@ export const otherName = <const T extends readonly Named[], const P>(fields: T &
   mapValues<Fields<T, P>, Pairs<T, P>>(fields, (field) => ["title", field.read()]);
 // @ts-expect-error A concrete mapper cannot return one position's value for every position.
 mapValues<readonly [1, "a"], readonly [number, string]>([1, "a"], () => 1);
+
+// Without type arguments the call always compiles, and no key gets a type its value does not have.
+type Same<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+const same = <T extends true>(): T | undefined => undefined;
+const boxes = { price: { value: 300 }, title: { value: "ノート" } };
+
+const doubled = mapValues({ a: 1, b: 2 }, (n) => n * 2);
+same<Same<typeof doubled, { readonly a: number; readonly b: number }>>();
+equal(doubled.b, 4);
+
+const mixed = mapValues(boxes, (box) => box.value);
+same<Same<typeof mixed, { readonly price: string | number; readonly title: string | number }>>();
+equal(mixed.title, "ノート");
+
+const texts = mapValues([1, 2] as const, (n) => String(n));
+same<Same<typeof texts, readonly [string, string]>>();
+equal(texts[1], "2");
+
+const unboxAll = <R>(source: { readonly [K in keyof R]: { readonly value: R[K] } }) =>
+  mapValues(source, (box) => box.value);
+const unboxed = unboxAll(boxes);
+same<Same<typeof unboxed, { readonly price: number; readonly title: string }>>();
+equal(unboxed.price, 300);
+
+const constantAll = <R>(source: { readonly [K in keyof R]: { readonly value: R[K] } }) => mapValues(source, () => 123);
+const constants = constantAll(boxes);
+same<Same<typeof constants, { readonly price: number; readonly title: number }>>();
+equal(constants.title, 123);
