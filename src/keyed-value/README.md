@@ -93,3 +93,35 @@ const readByName = <const Fields extends readonly Field[]>(list: Fields) =>
 ```
 
 When calling `mapValues` nested inside another `mapValues` mapper, returning the outer received value directly from the inner mapper results in a compile error. Calling an overloaded function inside the mapper also does not preserve per-key return types.
+
+## Read a field that may be left out
+
+To let a field such as a record of dependencies be left out only when it would be empty, build the definition type with `OptionalWhenEmpty`. Inside a generic function, read the field with `fieldOrEmpty`. When the field is left out, it returns an empty object.
+
+```ts
+import { fieldOrEmpty, mapValues, type OptionalWhenEmpty } from "as-free";
+
+type Dep<T> = { readonly resolve: () => T };
+
+const resolveAll = <P extends Record<string, Dep<unknown>>>(deps: P) => mapValues(deps, (dep) => dep.resolve());
+type Resolved<P extends Record<string, Dep<unknown>>> = ReturnType<typeof resolveAll<P>>;
+
+type Rule<P extends Record<string, Dep<unknown>>> = {
+  readonly check: (id: string, deps: Resolved<P>) => boolean;
+} & OptionalWhenEmpty<"requires", P>;
+
+const rule = <P extends Record<string, Dep<unknown>> = {}>(def: Rule<P>) => {
+  const deps = resolveAll(fieldOrEmpty<"requires", P>(def, "requires"));
+  return (id: string) => def.check(id, deps);
+};
+
+rule({ check: (id) => id !== "" });
+rule({ requires: { find }, check: (id, { find }) => find(id) });
+```
+
+`P` is not inferred, so pass it explicitly along with the field name. Give the type parameter `P` of your own function the default `= {}`.
+
+The field cannot be left out for the following `P`, and doing so is a compile error:
+
+- A record with any key, including optional keys and index signatures such as `Record<string, X>`.
+- Function types, constructor types, and classes whose members are all private. An empty object is not a value of these.

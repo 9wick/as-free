@@ -93,3 +93,35 @@ const readByName = <const Fields extends readonly Field[]>(list: Fields) =>
 ```
 
 `mapValues` の関数の中でもう一度 `mapValues` を呼ぶとき、外側で受け取った値を内側からそのまま返すとコンパイルエラーになります。オーバーロードのある関数を呼んだ結果は、キーごとの型になりません。
+
+## 省略できる field を取り出す
+
+依存の record のような field を「値が空のときだけ省略できる」ようにするには、定義の型を `OptionalWhenEmpty` で組み立てます。generic な関数の中では、`fieldOrEmpty` で field を取り出します。field が省略されていれば、空のオブジェクトが返ります。
+
+```ts
+import { fieldOrEmpty, mapValues, type OptionalWhenEmpty } from "as-free";
+
+type Dep<T> = { readonly resolve: () => T };
+
+const resolveAll = <P extends Record<string, Dep<unknown>>>(deps: P) => mapValues(deps, (dep) => dep.resolve());
+type Resolved<P extends Record<string, Dep<unknown>>> = ReturnType<typeof resolveAll<P>>;
+
+type Rule<P extends Record<string, Dep<unknown>>> = {
+  readonly check: (id: string, deps: Resolved<P>) => boolean;
+} & OptionalWhenEmpty<"requires", P>;
+
+const rule = <P extends Record<string, Dep<unknown>> = {}>(def: Rule<P>) => {
+  const deps = resolveAll(fieldOrEmpty<"requires", P>(def, "requires"));
+  return (id: string) => def.check(id, deps);
+};
+
+rule({ check: (id) => id !== "" });
+rule({ requires: { find }, check: (id, { find }) => find(id) });
+```
+
+型引数 `P` は推論されないので、field 名と一緒に明示します。`P` を受け取る関数の型引数には既定値 `= {}` を付けます。
+
+次の `P` では field を省略できず、コンパイルエラーになります。
+
+- key を持つ record。key が省略可能な場合や、`Record<string, X>` のような index signature の場合も含みます。
+- 関数型、コンストラクタ型、private なメンバーだけを持つ class。空のオブジェクトはこれらの値になりません。

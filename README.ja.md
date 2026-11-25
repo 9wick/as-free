@@ -126,13 +126,13 @@ if (isConstructor(candidate)) {
 
 ## モジュール一覧
 
-| モジュール    | インポート        | 用途                                                     | ドキュメント                                |
-| ------------- | ----------------- | -------------------------------------------------------- | ------------------------------------------- |
-| `keyed-value` | `as-free`         | キーと値の型対応を保つ `fromEntries` / `mapValues`       | [keyed-value](src/keyed-value/README.ja.md) |
-| `json`        | `as-free`         | JSON 経由で `T` を保つ `createJsonStore`                 | [json](src/json/README.ja.md)               |
-| `value-store` | `as-free`         | `KeyedValueStore` / `ValueKey` と `createKeyedValueView` | [value-store](src/value-store/README.ja.md) |
-| `callable`    | `as-free`         | `defineForwarder`, `whenArg`, `isFunction`               | [callable](src/callable/README.ja.md)       |
-| `runtime`     | `as-free/runtime` | `isConstructor` によるコンストラクタ判定                 | [runtime](src/runtime/README.ja.md)         |
+| モジュール    | インポート        | 用途                                                                | ドキュメント                                |
+| ------------- | ----------------- | ------------------------------------------------------------------- | ------------------------------------------- |
+| `keyed-value` | `as-free`         | キーと値の型対応を保つ `fromEntries` / `mapValues` / `fieldOrEmpty` | [keyed-value](src/keyed-value/README.ja.md) |
+| `json`        | `as-free`         | JSON 経由で `T` を保つ `createJsonStore`                            | [json](src/json/README.ja.md)               |
+| `value-store` | `as-free`         | `KeyedValueStore` / `ValueKey` と `createKeyedValueView`            | [value-store](src/value-store/README.ja.md) |
+| `callable`    | `as-free`         | `defineForwarder`, `whenArg`, `isFunction`                          | [callable](src/callable/README.ja.md)       |
+| `runtime`     | `as-free/runtime` | `isConstructor` によるコンストラクタ判定                            | [runtime](src/runtime/README.ja.md)         |
 
 ## ドキュメント
 

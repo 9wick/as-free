@@ -126,13 +126,13 @@ if (isConstructor(candidate)) {
 
 ## Modules
 
-| Module        | Import            | Purpose                                                    | Docs                                     |
-| ------------- | ----------------- | ---------------------------------------------------------- | ---------------------------------------- |
-| `keyed-value` | `as-free`         | `fromEntries`, `mapValues` preserving key/value types      | [keyed-value](src/keyed-value/README.md) |
-| `json`        | `as-free`         | `createJsonStore` preserving `T` across JSON serialization | [json](src/json/README.md)               |
-| `value-store` | `as-free`         | `KeyedValueStore` / `ValueKey` and `createKeyedValueView`  | [value-store](src/value-store/README.md) |
-| `callable`    | `as-free`         | `defineForwarder`, `whenArg`, `isFunction`                 | [callable](src/callable/README.md)       |
-| `runtime`     | `as-free/runtime` | `isConstructor` runtime check                              | [runtime](src/runtime/README.md)         |
+| Module        | Import            | Purpose                                                               | Docs                                     |
+| ------------- | ----------------- | --------------------------------------------------------------------- | ---------------------------------------- |
+| `keyed-value` | `as-free`         | `fromEntries`, `mapValues`, `fieldOrEmpty` preserving key/value types | [keyed-value](src/keyed-value/README.md) |
+| `json`        | `as-free`         | `createJsonStore` preserving `T` across JSON serialization            | [json](src/json/README.md)               |
+| `value-store` | `as-free`         | `KeyedValueStore` / `ValueKey` and `createKeyedValueView`             | [value-store](src/value-store/README.md) |
+| `callable`    | `as-free`         | `defineForwarder`, `whenArg`, `isFunction`                            | [callable](src/callable/README.md)       |
+| `runtime`     | `as-free/runtime` | `isConstructor` runtime check                                         | [runtime](src/runtime/README.md)         |
 
 ## Documentation
 
