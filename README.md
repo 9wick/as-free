@@ -126,18 +126,19 @@ if (isConstructor(candidate)) {
 
 ## Modules
 
-| Module        | Import            | Purpose                                                    | Docs                                     |
-| ------------- | ----------------- | ---------------------------------------------------------- | ---------------------------------------- |
-| `keyed-value` | `as-free`         | `fromEntries`, `mapValues` preserving key/value types      | [keyed-value](src/keyed-value/README.md) |
-| `json`        | `as-free`         | `createJsonStore` preserving `T` across JSON serialization | [json](src/json/README.md)               |
-| `value-store` | `as-free`         | `KeyedValueStore` / `ValueKey` and `createKeyedValueView`  | [value-store](src/value-store/README.md) |
-| `callable`    | `as-free`         | `defineForwarder`, `whenArg`, `isFunction`                 | [callable](src/callable/README.md)       |
-| `runtime`     | `as-free/runtime` | `isConstructor` runtime check                              | [runtime](src/runtime/README.md)         |
+| Module         | Import            | Purpose                                                       | Docs                                       |
+| -------------- | ----------------- | ------------------------------------------------------------- | ------------------------------------------ |
+| `keyed-value`  | `as-free`         | `fromEntries`, `mapValues` preserving key/value types         | [keyed-value](src/keyed-value/README.md)   |
+| `get-or-empty` | `as-free`         | `getOrEmpty` for a field that may be left out only when empty | [get-or-empty](src/get-or-empty/README.md) |
+| `json`         | `as-free`         | `createJsonStore` preserving `T` across JSON serialization    | [json](src/json/README.md)                 |
+| `value-store`  | `as-free`         | `KeyedValueStore` / `ValueKey` and `createKeyedValueView`     | [value-store](src/value-store/README.md)   |
+| `callable`     | `as-free`         | `defineForwarder`, `whenArg`, `isFunction`                    | [callable](src/callable/README.md)         |
+| `runtime`      | `as-free/runtime` | `isConstructor` runtime check                                 | [runtime](src/runtime/README.md)           |
 
 ## Documentation
 
 - [Scope & Design Criteria](docs/scope.md) — Which `as` casts this package targets and how utilities are evaluated
-- Module guides: [keyed-value](src/keyed-value/README.md) · [json](src/json/README.md) · [value-store](src/value-store/README.md) · [callable](src/callable/README.md) · [runtime](src/runtime/README.md)
+- Module guides: [keyed-value](src/keyed-value/README.md) · [get-or-empty](src/get-or-empty/README.md) · [json](src/json/README.md) · [value-store](src/value-store/README.md) · [callable](src/callable/README.md) · [runtime](src/runtime/README.md)
 
 ## Development
 

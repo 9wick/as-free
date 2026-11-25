@@ -126,18 +126,19 @@ if (isConstructor(candidate)) {
 
 ## モジュール一覧
 
-| モジュール    | インポート        | 用途                                                     | ドキュメント                                |
-| ------------- | ----------------- | -------------------------------------------------------- | ------------------------------------------- |
-| `keyed-value` | `as-free`         | キーと値の型対応を保つ `fromEntries` / `mapValues`       | [keyed-value](src/keyed-value/README.ja.md) |
-| `json`        | `as-free`         | JSON 経由で `T` を保つ `createJsonStore`                 | [json](src/json/README.ja.md)               |
-| `value-store` | `as-free`         | `KeyedValueStore` / `ValueKey` と `createKeyedValueView` | [value-store](src/value-store/README.ja.md) |
-| `callable`    | `as-free`         | `defineForwarder`, `whenArg`, `isFunction`               | [callable](src/callable/README.ja.md)       |
-| `runtime`     | `as-free/runtime` | `isConstructor` によるコンストラクタ判定                 | [runtime](src/runtime/README.ja.md)         |
+| モジュール     | インポート        | 用途                                                     | ドキュメント                                  |
+| -------------- | ----------------- | -------------------------------------------------------- | --------------------------------------------- |
+| `keyed-value`  | `as-free`         | キーと値の型対応を保つ `fromEntries` / `mapValues`       | [keyed-value](src/keyed-value/README.ja.md)   |
+| `get-or-empty` | `as-free`         | 空のときだけ省略できる field を取り出す `getOrEmpty`     | [get-or-empty](src/get-or-empty/README.ja.md) |
+| `json`         | `as-free`         | JSON 経由で `T` を保つ `createJsonStore`                 | [json](src/json/README.ja.md)                 |
+| `value-store`  | `as-free`         | `KeyedValueStore` / `ValueKey` と `createKeyedValueView` | [value-store](src/value-store/README.ja.md)   |
+| `callable`     | `as-free`         | `defineForwarder`, `whenArg`, `isFunction`               | [callable](src/callable/README.ja.md)         |
+| `runtime`      | `as-free/runtime` | `isConstructor` によるコンストラクタ判定                 | [runtime](src/runtime/README.ja.md)           |
 
 ## ドキュメント
 
 - [スコープと採用基準](docs/scope.ja.md) — このパッケージが対象とする `as` の分類と採用基準
-- 各モジュール詳細: [keyed-value](src/keyed-value/README.ja.md) · [json](src/json/README.ja.md) · [value-store](src/value-store/README.ja.md) · [callable](src/callable/README.ja.md) · [runtime](src/runtime/README.ja.md)
+- 各モジュール詳細: [keyed-value](src/keyed-value/README.ja.md) · [get-or-empty](src/get-or-empty/README.ja.md) · [json](src/json/README.ja.md) · [value-store](src/value-store/README.ja.md) · [callable](src/callable/README.ja.md) · [runtime](src/runtime/README.ja.md)
 
 ## 開発
 
