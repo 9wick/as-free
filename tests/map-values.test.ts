@@ -85,30 +85,78 @@ export const otherName = <const T extends readonly Named[], const P>(fields: T &
 // @ts-expect-error A concrete mapper cannot return one position's value for every position.
 mapValues<readonly [1, "a"], readonly [number, string]>([1, "a"], () => 1);
 
-// Without type arguments the call always compiles, and no key gets a type its value does not have.
+// Called directly, each key gets the type found along the path the mapper took from its item.
 type Same<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 const same = <T extends true>(): T | undefined => undefined;
 const boxes = { price: { value: 300 }, title: { value: "ノート" } };
 
-const doubled = mapValues({ a: 1, b: 2 }, (n) => n * 2);
-same<Same<typeof doubled, { readonly a: number; readonly b: number }>>();
-equal(doubled.b, 4);
-
-const mixed = mapValues(boxes, (box) => box.value);
-same<Same<typeof mixed, { readonly price: string | number; readonly title: string | number }>>();
-equal(mixed.title, "ノート");
-
-const texts = mapValues([1, 2] as const, (n) => String(n));
-same<Same<typeof texts, readonly [string, string]>>();
-equal(texts[1], "2");
-
-const unboxAll = <R>(source: { readonly [K in keyof R]: { readonly value: R[K] } }) =>
-  mapValues(source, (box) => box.value);
-const unboxed = unboxAll(boxes);
+const unboxed = mapValues(boxes, (box) => box.value);
 same<Same<typeof unboxed, { readonly price: number; readonly title: string }>>();
 equal(unboxed.price, 300);
 
-const constantAll = <R>(source: { readonly [K in keyof R]: { readonly value: R[K] } }) => mapValues(source, () => 123);
-const constants = constantAll(boxes);
-same<Same<typeof constants, { readonly price: number; readonly title: number }>>();
-equal(constants.title, 123);
+const called = mapValues({ price: () => 300, title: async () => "ノート" }, (get) => get());
+same<Same<typeof called, { readonly price: number; readonly title: Promise<string> }>>();
+equal(called.price, 300);
+
+const withArgument = mapValues({ find: (id: string) => ({ id }), save: (id: string) => id.length > 0 }, (run) => run("a"));
+same<Same<typeof withArgument, { readonly find: { id: string }; readonly save: boolean }>>();
+equal(withArgument.save, true);
+
+const viaMethod = mapValues({ p: { run: (n: number) => n }, q: { run: (n: number) => String(n) } }, (item) => item.run(1));
+same<Same<typeof viaMethod, { readonly p: number; readonly q: string }>>();
+equal(viaMethod.q, "1");
+
+const computed = mapValues(boxes, (box) => String(box.value));
+same<Same<typeof computed, { readonly price: string; readonly title: string }>>();
+equal(computed.price, "300");
+
+const keyed = mapValues(boxes, (box, key) => [key, box.value] as const);
+same<Same<typeof keyed.title, readonly ["price" | "title", string]>>();
+equal(keyed.title[1], "ノート");
+
+const wrapped = mapValues(boxes, (box) => new Set([box.value]));
+wrapped.price.forEach((value) => {
+  const kept: number = value;
+  equal(kept, 300);
+});
+
+const direct = fromEntries(
+  mapValues(
+    [
+      { name: "price", value: 300 },
+      { name: "title", value: "ノート" },
+    ],
+    (field) => [field.name, field.value] as const,
+  ),
+);
+same<Same<typeof direct, { readonly price: 300; readonly title: "ノート" }>>();
+equal(direct.title, "ノート");
+
+// A function that keeps an earlier item gets no per-key type.
+const first = <T>() => {
+  let kept: { readonly value: T } | undefined;
+  return (value: T): T => (kept ??= { value }).value;
+};
+const stale = mapValues({ a: 1, b: "x" }, first());
+same<Same<typeof stale, { readonly a: unknown; readonly b: unknown }>>();
+equal(stale.b, 1);
+
+const table = mapValues({ a: 1, b: "x" }, (outer) => {
+  const plain: number | string = outer;
+  return mapValues({ a: 1, b: "x" }, (inner) => [plain, inner] as const);
+});
+same<Same<typeof table.b.a, readonly [string | number, 1]>>();
+equal(table.b.a[0], "x");
+
+function checkDirect(rows: readonly { readonly name: "price"; readonly value: number }[]) {
+  // @ts-expect-error The inner call cannot return the outer item: both would count as the inner item.
+  mapValues({ a: 1, b: "x" }, (outer) => mapValues({ a: 1, b: "x" }, () => outer));
+  // @ts-expect-error The same holds inside a container.
+  mapValues({ a: 1, b: "x" }, (outer) => mapValues({ a: 1, b: "x" }, (inner) => [outer, inner] as const));
+  // @ts-expect-error An array does not promise the price item exists.
+  fromEntries(mapValues(rows, (field) => [field.name, field.value] as const)).price;
+  // @ts-expect-error Each key keeps its own value type.
+  const wrong: string = unboxed.price;
+  void wrong;
+}
+void checkDirect;

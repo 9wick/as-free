@@ -71,61 +71,43 @@ const label = await handlers.label(3) // string
 
 ## すべての値を写す
 
-`mapValues` は配列の `map` のオブジェクト版です。2つ目の引数の関数をすべての値に適用し、結果を同じキーに置きます。型引数は書きません。
+`mapValues` は配列の `map` のオブジェクト版です。2つ目の引数の関数をすべての値に適用し、結果を同じキーに置きます。結果の型はキーごとに決まります。
 
 ```ts
 import { mapValues } from "type-proof"
 
-const doubled = mapValues({ a: 1, b: 2 }, (n) => n * 2)
-// { a: number; b: number }
-
 const boxes = { price: { value: 300 }, title: { value: "ノート" } }
 const values = mapValues(boxes, (box) => box.value)
-// { price: string | number; title: string | number }
+values.price // number
+values.title // string
+
+const getters = { count: () => 3, label: async () => "残り 3 個" }
+const results = mapValues(getters, (get) => get())
+results.count // number
+results.label // Promise<string>
 ```
 
-値の型がキーごとに違うと、結果の型は全キー共通になります。TypeScript は、渡された関数をキーごとに当てはめた型を計算できないためです。型が実際の値と食い違うことはありません。
+キーごとの型になるのは、受け取った値からプロパティを読んだ結果と、関数を呼んだ結果です。`String(box.value)` のように計算した結果は、全キーで同じ型になります。関数の中で `await` した結果も同じです。
 
-キーごとの型を保つには、入力の型を結果の型 `R` から書いた関数の中で呼びます。
-
-```ts
-const unboxAll = <R>(source: { readonly [K in keyof R]: { readonly value: R[K] } }) =>
-	mapValues(source, (box) => box.value)
-
-const product = unboxAll(boxes)
-// { price: number; title: string }
-```
-
-省略できるキーは、結果でも省略できるキーになります。
-
-名前を持つ要素の配列は、`mapValues` で `[名前, 値]` のペアに写してから `fromEntries` に渡します。
+名前を持つ要素の配列は、`[名前, 値]` のペアに写してから `fromEntries` に渡します。
 
 ```ts
 import { fromEntries, mapValues } from "type-proof"
 
-type Named = { readonly name: string }
-type NameOf<Item> = Item extends Named ? Item["name"] : never
-
-type Positions<P> = { readonly [I in keyof P]: Named & { readonly value: P[I] } }
-type Fields<T extends readonly Named[], P> = {
-	readonly [I in keyof T]: { readonly name: NameOf<T[I]>; readonly value: P[I & keyof P] }
-}
-type Pairs<T extends readonly Named[], P> = {
-	readonly [I in keyof T]: readonly [NameOf<T[I]>, P[I & keyof P]]
-}
-
-const byName = <const T extends readonly Named[], const P>(fields: T & Positions<P> & Fields<T, P>) =>
-	fromEntries(mapValues<Fields<T, P>, Pairs<T, P>>(fields, (field) => [field.name, field.value]))
-
-const product = byName([
-	{ name: "price", value: 300 },
-	{ name: "title", value: "ノート" },
-])
-product.price // number
-product.title // string
+const product = fromEntries(
+	mapValues(
+		[
+			{ name: "price", value: 300 },
+			{ name: "title", value: "ノート" },
+		],
+		(field) => [field.name, field.value] as const,
+	),
+)
+product.price // 型は 300
+product.title // 型は "ノート"
 ```
 
-配列の場合は、`P` に `extends readonly unknown[]` を付けず、名前の型は `T[I]["name"]` ではなく `NameOf<T[I]>` と書きます。どちらかを崩すと TypeScript の検査が緩み、`[field.name, 123]` のような誤った関数が通ります。
+`mapValues` の関数の中でもう一度 `mapValues` を呼ぶとき、外側で受け取った値を内側からそのまま返すとコンパイルエラーになります。値の型がまだ決まっていない総称関数の中でも使えません。
 
 ## 有効期間を持つ参照を作る
 
