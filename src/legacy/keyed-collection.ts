@@ -1,5 +1,5 @@
-import { freezeEntries, type Flatten, type Key, type SingleKey } from "./from-entries.ts";
-import type { GuardedValue } from "./keyed-value-view.ts";
+import { freezeEntries, type Flatten, type Key, type SingleKey } from "../keyed-value/from-entries.ts";
+import type { GuardedValue } from "../value-store/keyed-value-view.ts";
 
 type KeyedItem = { readonly key: Key };
 type Evaluation = "async" | "sync";

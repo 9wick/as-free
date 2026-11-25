@@ -94,5 +94,6 @@ const result = lib.getValue() as string | null;
 
 ## モジュール
 
-- [keyed-value](src/keyed-value/README.md) は、キーと値の型の対応を保つ変換と保管を扱います。
+- [keyed-value](src/keyed-value/README.md) は、キーと値の型の対応を保つ変換を扱います。
+- [value-store](src/value-store/README.md) は、有効期間を持つ参照と、型付きキーでの保管を扱います。
 - [runtime](src/runtime/README.md) は、JSON の検証、未知の値の呼び出し、コンストラクタの判定を扱います。

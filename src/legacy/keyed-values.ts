@@ -1,4 +1,4 @@
-import type { Key, SingleKey } from "./from-entries.ts";
+import type { Key, SingleKey } from "../keyed-value/from-entries.ts";
 
 type WithValue<Values, K extends Key, V> = Readonly<Omit<Values, K> & Record<K, V>>;
 
