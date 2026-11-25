@@ -40,12 +40,12 @@ equal(fromEntries(customPairs).port, 3000);
 
 function checkPairs(entries: readonly (readonly ["port", number])[], key: "port" | "host") {
   // @ts-expect-error An array does not promise the port pair exists.
-  fromEntries(entries);
+  fromEntries(entries).port;
   // @ts-expect-error The actual key could be either member of the union.
-  fromEntries([[key, 3000]] as const);
+  fromEntries([[key, 3000]] as const).port;
   const mutable: [readonly ["port", number]] = [["port", 3000]];
   // @ts-expect-error A mutable tuple can lose its required position.
-  fromEntries(mutable);
+  fromEntries(mutable).port;
 }
 
 const calls: string[] = [];

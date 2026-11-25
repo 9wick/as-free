@@ -61,9 +61,9 @@ function checkTypes(rows: readonly (typeof items)[number][]) {
     }
   }
   // @ts-expect-error An arbitrary array may have no price or title.
-  fromEntries(pairs);
+  fromEntries(pairs).price;
   // @ts-expect-error A mutable tuple may have lost a required position.
-  fromEntries(remaining);
+  fromEntries(remaining).price;
   // @ts-expect-error Every item must have the selected value field.
   toEntries(items, "name", "missing");
   // @ts-expect-error A selected key must be a string or symbol.
