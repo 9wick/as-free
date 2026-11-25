@@ -1,4 +1,4 @@
-import { createKeyedValueView } from "type-proof";
+import { createKeyedValueView } from "as-free";
 
 function equal(actual: unknown, expected: unknown): void {
   if (!Object.is(actual, expected)) throw new Error("Unexpected value");

@@ -1,7 +1,8 @@
 {
-  "name": "type-proof",
+  "name": "as-free",
   "version": "0.0.0",
   "private": true,
+  "description": "Type-preserving utilities so your code needs no `as`.",
   "license": "MIT",
   "type": "module",
   "exports": {

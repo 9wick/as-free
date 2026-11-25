@@ -1,4 +1,4 @@
-import { createJsonStore } from "type-proof";
+import { createJsonStore } from "as-free";
 
 function equal(actual: unknown, expected: unknown): void {
   if (!Object.is(actual, expected)) throw new Error(`Expected ${String(expected)}, got ${String(actual)}`);

@@ -1,4 +1,4 @@
-import { fromEntries } from "type-proof";
+import { fromEntries } from "as-free";
 
 function equal(actual: unknown, expected: unknown): void {
   if (!Object.is(actual, expected)) throw new Error("Unexpected value");

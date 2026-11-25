@@ -1,4 +1,4 @@
-import { KeyedValueStore, ValueKey } from "type-proof";
+import { KeyedValueStore, ValueKey } from "as-free";
 
 const store = new KeyedValueStore();
 const count = new ValueKey<number>();

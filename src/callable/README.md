@@ -5,7 +5,7 @@
 `defineForwarder` に、関数の型と、呼び出しを転送する処理を渡します。渡した型そのものを持つ関数を受け取れます。呼び出し側では、元の関数と同じオーバーロードがそのまま使えます。
 
 ```ts
-import { defineForwarder } from "type-proof";
+import { defineForwarder } from "as-free";
 
 type Format = {
   (value: number, digits: number): string;
@@ -62,7 +62,7 @@ const notifyAll = defineForwarder<[Listener]>((args, forward) => {
 型を複数並べると、それらすべてのオーバーロードを持つ関数を受け取れます。`whenArg(args, index, guard)` で、`index` 番目の引数が `guard` を満たすかどうかで振り分けます。それぞれの分岐の `args` は、その分岐に来うるオーバーロードの引数に絞られます。
 
 ```ts
-import { defineForwarder, whenArg } from "type-proof";
+import { defineForwarder, whenArg } from "as-free";
 
 type OpenByPath = (path: string) => Handle;
 type OpenWithOptions = (options: { readonly path: string; readonly readOnly: boolean }) => Handle;
@@ -87,7 +87,7 @@ open({ path: "/tmp/a.txt", readOnly: true }); // Handle
 `isFunction(value)` は、値が関数なら `(...args: never[]) => unknown` に絞り込みます。`typeof value === "function"` で得られる `Function` 型と違い、関数を受け取る引数やプロパティにそのまま渡せます。
 
 ```ts
-import { isFunction } from "type-proof";
+import { isFunction } from "as-free";
 
 const handlers = new Map<string, (...args: never[]) => unknown>();
 

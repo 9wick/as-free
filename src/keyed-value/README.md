@@ -5,7 +5,7 @@
 手元にある `[key, value]` のペアを `fromEntries` に渡します。キーと値のリテラル型を保ったオブジェクトを受け取れます。
 
 ```ts
-import { fromEntries } from "type-proof";
+import { fromEntries } from "as-free";
 
 const pairs = [
   ["name", "ノート"],
@@ -35,7 +35,7 @@ product.price;
 関数も `[key, value]` の値として登録できます。変換後のオブジェクトから関数を取り出して呼ぶと、キーごとの引数と戻り値の型が使えます。
 
 ```ts
-import { fromEntries } from "type-proof";
+import { fromEntries } from "as-free";
 
 const handlers = fromEntries([
   ["count", (n: number) => n * 2],
@@ -53,7 +53,7 @@ const label = await handlers.label(3); // string
 `mapValues` は配列の `map` のオブジェクト版です。2つ目の引数の関数をすべての値に適用し、結果を同じキーに置きます。結果の型はキーごとに決まります。
 
 ```ts
-import { mapValues } from "type-proof";
+import { mapValues } from "as-free";
 
 const boxes = { price: { value: 300 }, title: { value: "ノート" } };
 const values = mapValues(boxes, (box) => box.value);
@@ -69,7 +69,7 @@ results.label; // Promise<string>
 名前を持つ要素の配列は、`[名前, 値]` のペアに写してから `fromEntries` に渡します。
 
 ```ts
-import { fromEntries, mapValues } from "type-proof";
+import { fromEntries, mapValues } from "as-free";
 
 const fields = [
   { name: "price", read: () => 300 },

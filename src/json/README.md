@@ -5,7 +5,7 @@
 `createJsonStore<T>` に、文字列を読む関数と書く関数を渡します。`T` を JSON にして保管する `set` と、取り出して `T` として返す `get` の対を受け取れます。
 
 ```ts
-import { createJsonStore } from "type-proof";
+import { createJsonStore } from "as-free";
 
 type Product = { name: string; price: number };
 

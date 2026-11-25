@@ -1,4 +1,4 @@
-import { isFunction } from "type-proof";
+import { isFunction } from "as-free";
 
 const handlers = new Map<string, (...args: never[]) => unknown>();
 const register = (name: string, value: unknown): void => {

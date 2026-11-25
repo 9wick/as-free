@@ -5,7 +5,7 @@
 `createKeyedValueView` に元の値を読む関数を渡します。`bind` に同じオブジェクトを渡すと、元の値の公開メンバーを転送する Proxy を受け取れます。この例では、編集を終了すると参照から下書きを読めなくなります。
 
 ```ts
-import { createKeyedValueView } from "type-proof";
+import { createKeyedValueView } from "as-free";
 
 const draft = { text: "下書き" };
 let editing = true;
@@ -28,7 +28,7 @@ if (result.ok) {
 `KeyedValueStore` は、一つのストアに異なる型の値を保管できます。登録と取得で同じ `ValueKey<T>` を使うと、そのキーに対応する型で値を取り出せます。
 
 ```ts
-import { KeyedValueStore, ValueKey } from "type-proof";
+import { KeyedValueStore, ValueKey } from "as-free";
 
 const store = new KeyedValueStore();
 const title = new ValueKey<string>();

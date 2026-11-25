@@ -1,4 +1,4 @@
-import { isConstructor, type Constructor } from "type-proof/runtime";
+import { isConstructor, type Constructor } from "as-free/runtime";
 
 let touched = false;
 class ConstructorWithSideEffects {
