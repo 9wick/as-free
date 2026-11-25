@@ -5,8 +5,6 @@ type Position<In> = Exclude<keyof In, keyof (readonly unknown[])>;
 type KeyOf<In> = In extends readonly unknown[] ? Position<In> : keyof In;
 type ValueOf<In> = In extends readonly unknown[] ? In[number] : In[keyof In];
 
-export type MapValues<In, Out> = { readonly [K in keyof In]: Out[K & keyof Out] };
-
 declare const origin: unique symbol;
 declare const called: unique symbol;
 type Called = typeof called;
@@ -96,22 +94,12 @@ type Proof<Result, Scope> = [Marks<Result, Scope, false>] extends [Marks<Result,
   ? []
   : ["mapValues cannot return a value that an outer mapValues passed to its mapper"];
 
-// Without type arguments, the result is looked up per key along the path the mapper took from the item.
+// The result is looked up per key along the path the mapper took from the item.
 export function mapValues<const In extends object, Fn extends Mapper<In>>(
   source: In,
   mapper: Fn,
   ...proof: Proof<Returned<Fn, KeyOf<In>>, KeyOf<In>>
 ): { readonly [K in keyof In]: Settle<Returned<Fn, KeyOf<In>>, KeyOf<In>, In[K]> };
-// With type arguments, the caller's compiler checks the mapper for every key K separately. This is the form for
-// generic functions, where the values are not known yet.
-export function mapValues<In extends readonly unknown[], Out = never>(
-  source: In,
-  mapper: <K extends Position<In> & keyof Out>(value: In[K], key: K) => Out[K],
-): MapValues<In, Out>;
-export function mapValues<In, Out = never>(
-  source: In & object,
-  mapper: <K extends keyof In & keyof Out>(value: In[K], key: K) => Out[K],
-): MapValues<In, Out>;
 // The loops below store each result under the key it was computed from.
 export function mapValues(source: object, mapper: (value: unknown, key: Key) => unknown): unknown {
   if (Array.isArray(source)) {
