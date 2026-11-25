@@ -6,7 +6,6 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./legacy": "./src/legacy/index.ts",
     "./runtime": "./src/runtime/index.ts"
   },
   "scripts": {

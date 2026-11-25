@@ -17,7 +17,7 @@ product.name // 型は "ノート"
 product.price // 型は 300
 ```
 
-入力は固定長の `readonly` タプルです。各ペアのキーには、一つに確定した文字列リテラルか `unique symbol` を指定します。同じキーが複数ある場合は、最後の値とその型を採用します。
+入力は固定長のタプルで、各ペアは `readonly` です。各ペアのキーには、一つに確定した文字列リテラルか `unique symbol` を指定します。同じキーが複数ある場合は、最後の値とその型を採用します。
 
 長さの決まらない配列など、キーが必ずあると言えない入力を渡すと、戻り値が「理由を名前にしたプロパティだけを持つ型」になります。その結果から `product.price` などを読んだ時点でコンパイルエラーになります。
 
@@ -66,24 +66,24 @@ results.count // number
 results.label // Promise<string>
 ```
 
-キーごとの型になるのは、受け取った値からプロパティを読んだ結果と、関数を呼んだ結果です。`String(box.value)` のように計算した結果は、全キーで同じ型になります。関数の中で `await` した結果は、キーごとの型にならず、粗い型になります。
+キーごとの型になるのは、受け取った値からプロパティを読んだ結果、関数を呼んだ結果、それを `await` した結果です。`String(box.value)` のように計算した結果は、全キーで同じ型になります。
 
-名前を持つ要素の配列は、`[名前, 値]` のペアに写してから `fromEntries` に渡します。
+型引数のまま受け取った値にも使えます。名前を持つ要素の配列は、`[名前, 値]` のペアに写してから `fromEntries` に渡します。
 
 ```ts
 import { fromEntries, mapValues } from "type-proof"
 
-const product = fromEntries(
-	mapValues(
-		[
-			{ name: "price", value: 300 },
-			{ name: "title", value: "ノート" },
-		],
-		(field) => [field.name, field.value] as const,
-	),
-)
-product.price // 型は 300
-product.title // 型は "ノート"
+type Field = { readonly name: string; read(): unknown }
+
+const readByName = async <const Fields extends readonly Field[]>(fields: Fields) =>
+	fromEntries(await Promise.all(mapValues(fields, async (field) => [field.name, await field.read()] as const)))
+
+const product = await readByName([
+	{ name: "price", read: () => 300 },
+	{ name: "title", read: async () => "ノート" },
+])
+product.price // number
+product.title // string
 ```
 
-`mapValues` の関数の中でもう一度 `mapValues` を呼ぶとき、外側で受け取った値を内側からそのまま返すとコンパイルエラーになります。値の型がまだ決まっていない総称関数の中でも使えません。
+`mapValues` の関数の中でもう一度 `mapValues` を呼ぶとき、外側で受け取った値を内側からそのまま返すとコンパイルエラーになります。オーバーロードのある関数を呼んだ結果は、キーごとの型になりません。

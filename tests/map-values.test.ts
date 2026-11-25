@@ -120,3 +120,87 @@ function checkDirect(rows: readonly { readonly name: "price"; readonly value: nu
   void wrong;
 }
 void checkDirect;
+
+// Inside a generic function the mapper is checked against what the items are known to be,
+// and each key's result is found on the actual item once the function is called.
+type Context = { readonly seed: number };
+type Feature = { readonly key: string; realize(context: Context): unknown };
+class UserFeature {
+  readonly key = "users";
+  async realize(context: Context) {
+    return { userCount: context.seed };
+  }
+}
+class StatusFeature {
+  readonly key = "status";
+  realize(context: Context) {
+    return { ready: context.seed > 0 };
+  }
+}
+
+const describeAll = <const Features extends readonly Feature[]>(features: Features, context: Context) =>
+  fromEntries(mapValues(features, (feature) => [feature.key, feature.realize(context)] as const));
+const described = describeAll([new UserFeature(), new StatusFeature()], { seed: 2 });
+same<Same<typeof described, { readonly users: Promise<{ userCount: number }>; readonly status: { ready: boolean } }>>();
+equal(described.status.ready, true);
+
+const realizeAll = async <const Features extends readonly Feature[]>(features: Features, context: Context) =>
+  fromEntries(
+    await Promise.all(mapValues(features, async (feature) => [feature.key, await feature.realize(context)] as const)),
+  );
+const realized = await realizeAll([new UserFeature(), new StatusFeature()], { seed: 2 });
+same<Same<typeof realized, { readonly users: { userCount: number }; readonly status: { ready: boolean } }>>();
+equal(realized.users.userCount, 2);
+equal(realized.status.ready, true);
+
+const readAll = <Getters extends Record<string, () => unknown>>(getters: Getters) => mapValues(getters, (get) => get());
+const readBoth = readAll({ count: () => 3, label: () => "x" });
+same<Same<typeof readBoth, { readonly count: number; readonly label: string }>>();
+equal(readBoth.label, "x");
+
+function readOverlapping(context: "port"): number;
+function readOverlapping(context: string): string;
+function readOverlapping(context: string): number | string {
+  return context === "port" ? 3000 : context;
+}
+type Reader = { readonly key: string; read(context: "port"): unknown };
+const readPorts = <const Readers extends readonly Reader[]>(readers: Readers) =>
+  fromEntries(mapValues(readers, (reader) => [reader.key, reader.read("port")] as const));
+const ports = readPorts([
+  { key: "plain", read: (context: "port") => context.length },
+  { key: "overloaded", read: readOverlapping },
+]);
+// An overloaded function is not followed: its result stays as the generic function saw it.
+same<Same<typeof ports, { readonly plain: number; readonly overloaded: unknown }>>();
+equal(ports.plain, 4);
+equal(ports.overloaded, 3000);
+
+// A value of unknown type stays unknown inside the mapper, and an await on it is recorded.
+const unknownGetters: { readonly a: () => unknown; readonly b: () => unknown } = { a: () => 1, b: () => "x" };
+const awaitedUnknown = mapValues(unknownGetters, async (get) => await get());
+same<Same<typeof awaitedUnknown, { readonly a: Promise<unknown>; readonly b: Promise<unknown> }>>();
+equal(await awaitedUnknown.b, "x");
+
+interface Shop {
+  readonly open: () => boolean;
+  readonly name: () => string;
+}
+function checkGeneric(rows: readonly UserFeature[]) {
+  mapValues(unknownGetters, (get) => {
+    const value = get();
+    // @ts-expect-error Nothing is known about the value.
+    value.toString();
+    return value;
+  });
+  mapValues(unknownGetters, (get) => {
+    const value = get();
+    // @ts-expect-error A value an outer mapValues traced cannot be returned from an inner one.
+    return mapValues({ a: 1 }, () => value);
+  });
+  // @ts-expect-error The source may have keys beyond the ones Shop lists, whose values are not functions.
+  const callAll = <Source extends Shop>(source: Source) => mapValues(source, (get) => get());
+  // @ts-expect-error An array does not promise the users item exists.
+  describeAll(rows, { seed: 1 }).users;
+  void callAll;
+}
+void checkGeneric;

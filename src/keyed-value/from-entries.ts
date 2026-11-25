@@ -23,11 +23,11 @@ type FromPairs<Pairs extends readonly Pair[], Values = {}> =
 export type FromEntries<Pairs extends readonly Pair[]> =
   number extends Pairs["length"]
     ? { readonly "fromEntries needs a fixed-length tuple"?: never }
-    : [Extract<Pairs | Pairs[number], unknown[]>] extends [never]
+    : [Extract<Pairs[number], unknown[]>] extends [never]
       ? HasUnsureKey<Pairs> extends true
         ? { readonly "fromEntries needs one literal key per pair"?: never }
         : FromPairs<Pairs>
-      : { readonly "fromEntries needs readonly tuples"?: never };
+      : { readonly "fromEntries needs readonly pairs"?: never };
 
 export const freezeEntries = (pairs: Iterable<Pair>) => Object.freeze(Object.fromEntries(pairs));
 
