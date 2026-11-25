@@ -1,18 +1,21 @@
 {
   "name": "type-proof",
   "version": "0.0.0",
-  "license": "MIT",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./runtime": "./src/runtime/index.ts"
   },
   "scripts": {
-    "test": "pnpm typecheck && node --test \"src/**/*.test.ts\"",
-    "typecheck": "tsc --noEmit"
+    "check": "vp check",
+    "test": "node --test \"src/**/*.test.ts\"",
+    "prepare": "vp config"
   },
   "devDependencies": {
-    "typescript": "7.0.2"
-  }
+    "typescript": "7.0.2",
+    "vite-plus": "catalog:"
+  },
+  "packageManager": "pnpm@10.26.0"
 }
