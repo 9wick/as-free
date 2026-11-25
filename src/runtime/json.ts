@@ -17,7 +17,5 @@ export const parseJson = <Value, DecodeError>(
   }
 
   const decoded = decode(input);
-  return decoded.ok
-    ? decoded
-    : { ok: false, error: { kind: "invalid-value", cause: decoded.error } };
+  return decoded.ok ? decoded : { ok: false, error: { kind: "invalid-value", cause: decoded.error } };
 };

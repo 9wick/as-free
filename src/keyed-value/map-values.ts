@@ -4,21 +4,21 @@ import type { Key } from "./from-entries.ts";
 // The mapper sees each value as a lens: it behaves as the value, and every property read, call or await on it
 // records the path taken. The mapper's result type then carries those paths, and for each key the same path is
 // followed on that key's own value type. The lens exists only in types; at runtime the mapper gets the value.
-declare const origin: unique symbol
-declare const site: unique symbol
-declare const sealed: unique symbol
-type Same<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false
-type Primitive = string | number | bigint | boolean | symbol
-type Missing = null | undefined
+declare const origin: unique symbol;
+declare const site: unique symbol;
+declare const sealed: unique symbol;
+type Same<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+type Primitive = string | number | bigint | boolean | symbol;
+type Missing = null | undefined;
 
 // Op is a type parameter of the mapper. While the mapper is checked it is unknown-to-be, so a type that depends
 // on it shows only what both outcomes share. Once the call is typed it is not Sealed, and the other outcome appears.
 // Op is a type parameter of the mapper. While the mapper is checked nothing is known about it, so a type that
 // depends on it shows only what both outcomes share. Once the call is typed it is not Sealed.
-type Sealed = { readonly [sealed]: true }
+type Sealed = { readonly [sealed]: true };
 // Member is the type the value had for the mapper. A key whose own value is of another type did not take this path.
-type Traced<Scope, Path, Member> = { readonly [origin]: readonly [(scope: Scope) => Scope, Path, Member] }
-type Brand<Scope, Path, Member, Op> = Traced<Scope, Path, Member> & { readonly [site]?: Op }
+type Traced<Scope, Path, Member> = { readonly [origin]: readonly [(scope: Scope) => Scope, Path, Member] };
+type Brand<Scope, Path, Member, Op> = Traced<Scope, Path, Member> & { readonly [site]?: Op };
 
 // One step of a path. Owner is the type the mapper held when it took the step: a key whose own value is of
 // another type did not take this path. Fallback is the result as the mapper saw it, used where the key's own
@@ -85,7 +85,7 @@ type Follow<Value, Path> = Path extends readonly [infer Step, ...infer Rest]
           : never
         : Follow<Value, Rest>
   : Value;
-type Last<Path> = Path extends readonly [...unknown[], infer Step] ? Step : never
+type Last<Path> = Path extends readonly [...unknown[], infer Step] ? Step : never;
 // Keeps the part of the found value that can be what the mapper held. A missing value always can: its own
 // trace leaves no mark. A promise the mapper took for a plain value may have been awaited or not; for a value
 // of unknown type the await itself is recorded, so nothing is left open.
@@ -97,44 +97,57 @@ type Kept<Found, Path, Member> = Found extends Member | Missing
       : Found extends PromiseLike<unknown>
         ? Found | Awaited<Found>
         : Found
-  : never
+  : never;
 
-type Settle<Result, Scope, Value> = Result extends Traced<infer Slot, infer Path, infer Member>
-  ? Same<Slot, Scope> extends true ? Kept<Follow<Value, Path>, Path, Member> : Result
-  : Same<Result, Date> extends true
-    ? Result
+type Settle<Result, Scope, Value> =
+  Result extends Traced<infer Slot, infer Path, infer Member>
+    ? Same<Slot, Scope> extends true
+      ? Kept<Follow<Value, Path>, Path, Member>
+      : Result
+    : Same<Result, Date> extends true
+      ? Result
+      : Result extends Promise<infer Inner>
+        ? Promise<Settle<Inner, Scope, Value>>
+        : Result extends (...args: infer Args) => infer Returned
+          ? (...args: { [Index in keyof Args]: Settle<Args[Index], Scope, Value> }) => Settle<Returned, Scope, Value>
+          : Result extends object
+            ? { readonly [Field in keyof Result]: Settle<Result[Field], Scope, Value> }
+            : Result;
+
+type Marks<Result, Scope, Own> =
+  Result extends Traced<infer Slot, unknown, unknown>
+    ? Own extends true
+      ? Same<Slot, Scope>
+      : true
     : Result extends Promise<infer Inner>
-      ? Promise<Settle<Inner, Scope, Value>>
+      ? readonly [Marks<Inner, Scope, Own>]
       : Result extends (...args: infer Args) => infer Returned
-        ? (...args: { [Index in keyof Args]: Settle<Args[Index], Scope, Value> }) => Settle<Returned, Scope, Value>
+        ? readonly [{ [Index in keyof Args]: Marks<Args[Index], Scope, Own> }, Marks<Returned, Scope, Own>]
         : Result extends object
-          ? { readonly [Field in keyof Result]: Settle<Result[Field], Scope, Value> }
-          : Result
-
-type Marks<Result, Scope, Own> = Result extends Traced<infer Slot, unknown, unknown>
-  ? Own extends true ? Same<Slot, Scope> : true
-  : Result extends Promise<infer Inner>
-    ? readonly [Marks<Inner, Scope, Own>]
-    : Result extends (...args: infer Args) => infer Returned
-      ? readonly [{ [Index in keyof Args]: Marks<Args[Index], Scope, Own> }, Marks<Returned, Scope, Own>]
-      : Result extends object
-        ? { readonly [Field in keyof Result]: Marks<Result[Field], Scope, Own> }
-        : true
+          ? { readonly [Field in keyof Result]: Marks<Result[Field], Scope, Own> }
+          : true;
 type Proof<Result, Scope> = [Marks<Result, Scope, false>] extends [Marks<Result, Scope, true>]
   ? []
-  : ["mapValues cannot return a value that an outer mapValues passed to its mapper"]
+  : ["mapValues cannot return a value that an outer mapValues passed to its mapper"];
 
-type Position<In> = Exclude<keyof In, keyof (readonly unknown[])>
-type KeyOf<In> = In extends readonly unknown[] ? Position<In> : keyof In
-type ValueOf<In> = In extends readonly unknown[] ? In[number] : In[keyof In]
+type Position<In> = Exclude<keyof In, keyof (readonly unknown[])>;
+type KeyOf<In> = In extends readonly unknown[] ? Position<In> : keyof In;
+type ValueOf<In> = In extends readonly unknown[] ? In[number] : In[keyof In];
 // Shape is what the source is known to be: the source type itself, or inside a generic function its constraint.
-type Known<Shape> = { readonly [Key in keyof Shape]: Shape[Key] }
-type Mapper<Shape, Keys> = <K extends Keys, Op>(value: Lens<ValueOf<Shape>, K, [], Op>, key: K) => unknown
-type Returned<Fn, Shape, Keys> = Fn extends (value: Lens<ValueOf<Shape>, Keys, [], unknown>, key: Keys) => infer Result ? Result : never
-type Covered<In, Shape> = Shape extends readonly unknown[] ? true : string extends keyof Shape ? true : [Exclude<keyof In, keyof Shape>] extends [never] ? true : false
-type Checked<In, Shape, Result, Scope> = Covered<In, Shape> extends true
-  ? Proof<Result, Scope>
-  : ["mapValues needs every key of the source to be known"]
+type Known<Shape> = { readonly [Key in keyof Shape]: Shape[Key] };
+type Mapper<Shape, Keys> = <K extends Keys, Op>(value: Lens<ValueOf<Shape>, K, [], Op>, key: K) => unknown;
+type Returned<Fn, Shape, Keys> = Fn extends (value: Lens<ValueOf<Shape>, Keys, [], unknown>, key: Keys) => infer Result
+  ? Result
+  : never;
+type Covered<In, Shape> = Shape extends readonly unknown[]
+  ? true
+  : string extends keyof Shape
+    ? true
+    : [Exclude<keyof In, keyof Shape>] extends [never]
+      ? true
+      : false;
+type Checked<In, Shape, Result, Scope> =
+  Covered<In, Shape> extends true ? Proof<Result, Scope> : ["mapValues needs every key of the source to be known"];
 
 export function mapValues<const In extends object, Shape, Fn extends Mapper<Shape, KeyOf<In>>>(
   source: In & Known<Shape>,

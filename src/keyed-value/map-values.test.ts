@@ -58,11 +58,15 @@ const called = mapValues({ price: () => 300, title: async () => "ノート" }, (
 same<Same<typeof called, { readonly price: number; readonly title: Promise<string> }>>();
 equal(called.price, 300);
 
-const withArgument = mapValues({ find: (id: string) => ({ id }), save: (id: string) => id.length > 0 }, (run) => run("a"));
+const withArgument = mapValues({ find: (id: string) => ({ id }), save: (id: string) => id.length > 0 }, (run) =>
+  run("a"),
+);
 same<Same<typeof withArgument, { readonly find: { id: string }; readonly save: boolean }>>();
 equal(withArgument.save, true);
 
-const viaMethod = mapValues({ p: { run: (n: number) => n }, q: { run: (n: number) => String(n) } }, (item) => item.run(1));
+const viaMethod = mapValues({ p: { run: (n: number) => n }, q: { run: (n: number) => String(n) } }, (item) =>
+  item.run(1),
+);
 same<Same<typeof viaMethod, { readonly p: number; readonly q: string }>>();
 equal(viaMethod.q, "1");
 

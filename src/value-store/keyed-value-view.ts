@@ -8,31 +8,29 @@ type DataKeys<Value> = {
 type Members<Value> = Value extends readonly unknown[]
   ? Readonly<MemberValues<Value>>
   : {
-    [Key in keyof (Pick<MemberValues<Value>, DataKeys<Value>> &
-      Readonly<Omit<MemberValues<Value>, DataKeys<Value>>>)]:
-      (Pick<MemberValues<Value>, DataKeys<Value>> &
-        Readonly<Omit<MemberValues<Value>, DataKeys<Value>>>)[Key];
-  };
+      [
+        Key in keyof (Pick<MemberValues<Value>, DataKeys<Value>> & Readonly<Omit<MemberValues<Value>, DataKeys<Value>>>)
+      ]: (Pick<MemberValues<Value>, DataKeys<Value>> & Readonly<Omit<MemberValues<Value>, DataKeys<Value>>>)[Key];
+    };
 type Construct<Value> = Value extends new (...args: infer Args) => infer Instance
   ? new (...args: Args) => Instance
   : Value extends abstract new (...args: infer Args) => infer Instance
     ? abstract new (...args: Args) => Instance
     : unknown;
 
-type Call<Value, Args extends unknown[], Result> =
-  (this: ThisParameterType<Value>, ...args: Args) => Result;
+type Call<Value, Args extends unknown[], Result> = (this: ThisParameterType<Value>, ...args: Args) => Result;
 
-export type GuardedValue<Value> =
-  Value extends (...args: infer Args) => infer Result
-    ? keyof Value extends never ? Value
-      : (Call<Value, Args, Result> & Construct<Value> & Pick<Value, keyof Value>) extends Value
-        ? Call<Value, Args, Result> & Construct<Value> & Members<Value>
-        : Members<Value>
-    : Value extends object
-      ? (Construct<Value> & Pick<Value, keyof Value>) extends Value
-        ? Construct<Value> & Members<Value>
-        : Members<Value>
-      : Value;
+export type GuardedValue<Value> = Value extends (...args: infer Args) => infer Result
+  ? keyof Value extends never
+    ? Value
+    : Call<Value, Args, Result> & Construct<Value> & Pick<Value, keyof Value> extends Value
+      ? Call<Value, Args, Result> & Construct<Value> & Members<Value>
+      : Members<Value>
+  : Value extends object
+    ? Construct<Value> & Pick<Value, keyof Value> extends Value
+      ? Construct<Value> & Members<Value>
+      : Members<Value>
+    : Value;
 
 type HandleContext = {
   readonly checkLifetime: () => object;
@@ -41,7 +39,7 @@ type HandleContext = {
 };
 
 const callableTarget = () => ((..._args: unknown[]): unknown => undefined).bind(undefined);
-const constructibleTarget = () => (function () {}).bind(undefined);
+const constructibleTarget = () => function () {}.bind(undefined);
 
 const shadowFor = (value: object): object => {
   if (Array.isArray(value)) return [];
@@ -55,35 +53,33 @@ const hasSameKind = (left: object, right: object): boolean =>
   isConstructor(left) === isConstructor(right);
 
 const unwrap = (context: HandleContext, value: unknown): unknown =>
-  value !== null && (typeof value === 'object' || typeof value === 'function')
+  value !== null && (typeof value === "object" || typeof value === "function")
     ? (context.sources.get(value) ?? value)
     : value;
 
 const invocationReceiver = (instance: object, method: unknown, handle: object): object =>
-  typeof instance === 'function' &&
-  (method === Function.prototype.call ||
-    method === Function.prototype.apply ||
-    method === Function.prototype.bind)
+  typeof instance === "function" &&
+  (method === Function.prototype.call || method === Function.prototype.apply || method === Function.prototype.bind)
     ? handle
     : instance;
 
-const readProperty = (
-  context: HandleContext,
-  read: () => object,
-  handle: object,
-  key: string | symbol,
-): unknown => {
+const readProperty = (context: HandleContext, read: () => object, handle: object, key: string | symbol): unknown => {
   const instance = read();
   const value: unknown = Reflect.get(instance, key);
-  if (typeof value === 'function') {
+  if (typeof value === "function") {
     // Bound functions must keep invoking the guarded handle after extraction.
     const receiver = invocationReceiver(instance, value, handle);
-    return createHandle(context, () => {
-      read();
-      return value;
-    }, shadowFor(value), receiver);
+    return createHandle(
+      context,
+      () => {
+        read();
+        return value;
+      },
+      shadowFor(value),
+      receiver,
+    );
   }
-  if (value === null || typeof value !== 'object') return value;
+  if (value === null || typeof value !== "object") return value;
   const existing = context.handles.get(value);
   if (existing) return existing;
   const nested = createHandle(context, () => value, Array.isArray(value) ? [] : {});
@@ -119,12 +115,7 @@ const propertyDescriptor = (
   };
 };
 
-const createHandle = (
-  context: HandleContext,
-  source: () => object,
-  shadow: object,
-  boundReceiver?: object,
-): object => {
+const createHandle = (context: HandleContext, source: () => object, shadow: object, boundReceiver?: object): object => {
   const read = (): object => {
     context.checkLifetime();
     const instance = source();
@@ -136,10 +127,12 @@ const createHandle = (
     apply: (_, receiver: unknown, args: unknown[]): unknown => {
       const instance = read();
       if (typeof instance !== "function") throw new TypeError("The source is not callable");
-      const target = receiver === undefined || receiver === boundReceiver
-        ? boundReceiver
-        : unwrap(context, receiver);
-      return Reflect.apply(instance, target, args.map((arg) => unwrap(context, arg)));
+      const target = receiver === undefined || receiver === boundReceiver ? boundReceiver : unwrap(context, receiver);
+      return Reflect.apply(
+        instance,
+        target,
+        args.map((arg) => unwrap(context, arg)),
+      );
     },
     construct: (_, args: unknown[], newTarget): object => {
       const instance = read();
@@ -181,7 +174,7 @@ export const createKeyedValueView = (source: () => object) => {
   return Object.freeze({
     get handle(): object {
       // Pending views must support calls before realization reveals the source's shape.
-      return handle ??= createHandle(context, read, constructibleTarget());
+      return (handle ??= createHandle(context, read, constructibleTarget()));
     },
     bind<Value>(value: Value): Result<GuardedValue<Value>, "different-source"> {
       const current = source();

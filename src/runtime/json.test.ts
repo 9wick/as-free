@@ -1,9 +1,7 @@
 import { parseJson, type Result } from "type-proof/runtime";
 
 function decodeNumber(input: unknown): Result<number, "expected-number"> {
-  return typeof input === "number"
-    ? { ok: true, value: input }
-    : { ok: false, error: "expected-number" };
+  return typeof input === "number" ? { ok: true, value: input } : { ok: false, error: "expected-number" };
 }
 
 const number = parseJson("42", decodeNumber);

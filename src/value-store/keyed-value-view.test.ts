@@ -6,7 +6,12 @@ function equal(actual: unknown, expected: unknown): void {
 
 const counter = {
   count: 3,
-  read: Object.assign(function (this: { count: number }) { return this.count; }, { label: "counter" }),
+  read: Object.assign(
+    function (this: { count: number }) {
+      return this.count;
+    },
+    { label: "counter" },
+  ),
 };
 let source: object = counter;
 const view = createKeyedValueView(() => source);

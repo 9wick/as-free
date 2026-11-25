@@ -4,7 +4,11 @@ function equal(actual: unknown, expected: unknown): void {
   if (!Object.is(actual, expected)) throw new Error("Unexpected value");
 }
 
-const config = fromEntries([["port", 3000], ["host", "localhost"], ["port", 3001]] as const);
+const config = fromEntries([
+  ["port", 3000],
+  ["host", "localhost"],
+  ["port", 3001],
+] as const);
 const port: 3001 = config.port;
 const host: "localhost" = config.host;
 equal(port, 3001);
@@ -19,7 +23,10 @@ const label = async (value: number) => {
   callsAfterConversion++;
   return `残り ${value} 個`;
 };
-const handlers = fromEntries([["count", count], ["label", label]] as const);
+const handlers = fromEntries([
+  ["count", count],
+  ["label", label],
+] as const);
 equal(callsAfterConversion, 0);
 equal(handlers.count, count);
 equal(handlers.label, label);
