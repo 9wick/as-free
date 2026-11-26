@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rootDir": ".",
+    "outDir": "../../.tmp/consumer-declarations",
+    "paths": { "as-free": ["../../dist/index.d.mts"] },
+    "skipLibCheck": true
+  },
+  "files": ["index.ts"]
+}
