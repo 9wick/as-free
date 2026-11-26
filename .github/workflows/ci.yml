@@ -23,3 +23,5 @@ jobs:
           cache: true
       - run: vp check
       - run: vp run test
+      # The bundled type definitions can break even when the sources type-check
+      - run: vp run check:dist

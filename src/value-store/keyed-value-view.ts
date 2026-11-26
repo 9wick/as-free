@@ -18,13 +18,14 @@ type Construct<Value> = Value extends new (...args: infer Args) => infer Instanc
     ? abstract new (...args: Args) => Instance
     : unknown;
 
-type Call<Value, Args extends unknown[], Result> = (this: ThisParameterType<Value>, ...args: Args) => Result;
+// CallResult is not named Result: the type definition bundler renames the imported Result and wrongly renames this one with it.
+type Call<Value, Args extends unknown[], CallResult> = (this: ThisParameterType<Value>, ...args: Args) => CallResult;
 
-export type GuardedValue<Value> = Value extends (...args: infer Args) => infer Result
+export type GuardedValue<Value> = Value extends (...args: infer Args) => infer CallResult
   ? keyof Value extends never
     ? Value
-    : Call<Value, Args, Result> & Construct<Value> & Pick<Value, keyof Value> extends Value
-      ? Call<Value, Args, Result> & Construct<Value> & Members<Value>
+    : Call<Value, Args, CallResult> & Construct<Value> & Pick<Value, keyof Value> extends Value
+      ? Call<Value, Args, CallResult> & Construct<Value> & Members<Value>
       : Members<Value>
   : Value extends object
     ? Construct<Value> & Pick<Value, keyof Value> extends Value
