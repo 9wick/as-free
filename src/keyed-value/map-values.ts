@@ -30,8 +30,9 @@ type Then = { readonly then: true };
 
 // A function is followed through a call only when its last signature alone can stand for the whole function.
 // With overloads the declared result is that of the last one, which a call may not select.
-type IsSingleCall<Fn> = Fn extends (...args: infer Args) => infer Result
-  ? [(...args: Args) => Result] extends [Fn]
+// Inferred names avoid Result: a declaration emit that inlines these types renames a Result in scope and its references inconsistently.
+type IsSingleCall<Fn> = Fn extends (...args: infer Args) => infer SingleResult
+  ? [(...args: Args) => SingleResult] extends [Fn]
     ? true
     : false
   : false;
@@ -49,9 +50,9 @@ type Lens<Value, Scope, Path extends readonly unknown[], Op> = Value extends unk
         ? Value & Brand<Scope, Path, Value, Op>
         : Value extends PromiseLike<infer Inner>
           ? PromiseLike<Lens<Inner, Scope, [...Path, Wait<Value>], Op>> & Brand<Scope, [...Path, Then], Value, Op>
-          : Value extends (...args: infer Args) => infer Result
+          : Value extends (...args: infer Args) => infer LensResult
             ? IsSingleCall<Value> extends true
-              ? ((...args: Args) => Lens<Result, Scope, [...Path, Call<Value, Result>], Op>) &
+              ? ((...args: Args) => Lens<LensResult, Scope, [...Path, Call<Value, LensResult>], Op>) &
                   Brand<Scope, Path, Value, Op>
               : Value & Brand<Scope, Path, Value, Op>
             : {
@@ -74,8 +75,8 @@ type Follow<Value, Path> = Path extends readonly [infer Step, ...infer Rest]
     : Step extends Call<infer Owner, infer Fallback>
       ? Value extends Owner
         ? IsSingleCall<Value> extends true
-          ? Value extends (...args: never) => infer Result
-            ? Follow<Result, Rest>
+          ? Value extends (...args: never) => infer FollowResult
+            ? Follow<FollowResult, Rest>
             : never
           : Follow<Fallback, Rest>
         : never
@@ -136,8 +137,11 @@ type ValueOf<In> = In extends readonly unknown[] ? In[number] : In[keyof In];
 // Shape is what the source is known to be: the source type itself, or inside a generic function its constraint.
 type Known<Shape> = { readonly [Key in keyof Shape]: Shape[Key] };
 type Mapper<Shape, Keys> = <K extends Keys, Op>(value: Lens<ValueOf<Shape>, K, [], Op>, key: K) => unknown;
-type Returned<Fn, Shape, Keys> = Fn extends (value: Lens<ValueOf<Shape>, Keys, [], unknown>, key: Keys) => infer Result
-  ? Result
+type Returned<Fn, Shape, Keys> = Fn extends (
+  value: Lens<ValueOf<Shape>, Keys, [], unknown>,
+  key: Keys,
+) => infer MapperResult
+  ? MapperResult
   : never;
 type Covered<In, Shape> = Shape extends readonly unknown[]
   ? true
