@@ -32,7 +32,8 @@
     "build": "vp pack",
     "check": "vp check",
     "test": "node --test \"src/**/*.test.ts\"",
-    "prepare": "vp config"
+    "prepare": "vp config",
+    "check:dist": "vp pack && tsc -p tsconfig.dist.json"
   },
   "devDependencies": {
     "typescript": "7.0.2",
