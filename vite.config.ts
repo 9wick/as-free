@@ -14,6 +14,8 @@ export default defineConfig({
   },
   lint: {
     plugins: ["typescript", "unicorn", "oxc", "import"],
+    // The consumer fixture resolves as-free to the built dist, which check:dist type-checks after building
+    ignorePatterns: ["test/consumer-declarations/**"],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: {
       "vite-plus/prefer-vite-plus-imports": "error",
