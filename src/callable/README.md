@@ -1,8 +1,10 @@
 # callable
 
-## オーバーロードを保ったまま呼び出しを転送する
+English | [日本語](README.ja.md) · [Back to README](../../README.md)
 
-`defineForwarder` に、関数の型と、呼び出しを転送する処理を渡します。渡した型そのものを持つ関数を受け取れます。呼び出し側では、元の関数と同じオーバーロードがそのまま使えます。
+## Forward calls while preserving overloads
+
+Pass function types and a forwarding handler to `defineForwarder`. The returned function has the exact combined signature, so callers retain all original overloads:
 
 ```ts
 import { defineForwarder } from "as-free";
@@ -22,12 +24,12 @@ const countedFormat = defineForwarder<[Format]>((args, forward) => {
 
 countedFormat(3.14159, 2); // string
 countedFormat(new Date()); // string
-countedFormat("3.14"); // コンパイルエラー
+countedFormat("3.14"); // Compile error
 ```
 
-`args` は、渡した型のどれかのオーバーロードの引数です。`forward(f, args)` は `args` で `f` を呼び、その結果を返します。外側の関数は、受け取った `this` をそのまま `f` に渡します。
+`args` represents the parameters of one of the provided overloads. `forward(f, args)` invokes `f` with `args` and returns its result, forwarding the outer `this` receiver as well.
 
-戻り値の型も、オーバーロードごとに保たれます。型引数を持つ関数でも同じです。
+Per-overload return types and generic signatures are preserved too:
 
 ```ts
 type First = <T>(items: readonly T[]) => T | undefined;
@@ -41,7 +43,7 @@ const loggedFirst = defineForwarder<[First]>((args, forward) => {
 loggedFirst([1, 2, 3]); // number | undefined
 ```
 
-複数の関数へ同じ引数を転送して、何も返さないこともできます。`undefined` を返せるのは、どのオーバーロードの戻り値も `undefined` を受け付けるときだけです。
+You can also forward the same arguments to multiple functions and return `undefined` (allowed whenever every overload's return type accepts `undefined`):
 
 ```ts
 type Listener = {
@@ -57,9 +59,9 @@ const notifyAll = defineForwarder<[Listener]>((args, forward) => {
 });
 ```
 
-## 引数で転送先を振り分ける
+## Dispatch by argument type
 
-型を複数並べると、それらすべてのオーバーロードを持つ関数を受け取れます。`whenArg(args, index, guard)` で、`index` 番目の引数が `guard` を満たすかどうかで振り分けます。それぞれの分岐の `args` は、その分岐に来うるオーバーロードの引数に絞られます。
+Provide multiple function types to combine their overloads into one function, then use `whenArg(args, index, guard)` to narrow `args` per branch according to the argument at `index`:
 
 ```ts
 import { defineForwarder, whenArg } from "as-free";
@@ -80,11 +82,11 @@ open("/tmp/a.txt"); // Handle
 open({ path: "/tmp/a.txt", readOnly: true }); // Handle
 ```
 
-分岐を取り違えて `forward(openWithOptions, r.args)` を `matched` の側に書くと、コンパイルエラーになります。
+Swapping the branches—for example passing `r.args` to `openWithOptions` when `r.matched` is `true`—fails to compile.
 
-## 関数かどうかを判定する
+## Check if a value is a function
 
-`isFunction(value)` は、値が関数なら `(...args: never[]) => unknown` に絞り込みます。`typeof value === "function"` で得られる `Function` 型と違い、関数を受け取る引数やプロパティにそのまま渡せます。
+`isFunction(value)` narrows a function value to `(...args: never[]) => unknown`. Unlike `typeof value === "function"` (which narrows to the unsafe `Function` type), the narrowed value can be passed directly to parameters or collections expecting typed callbacks:
 
 ```ts
 import { isFunction } from "as-free";
@@ -96,34 +98,34 @@ const register = (name: string, value: unknown): void => {
 };
 ```
 
-絞り込んだ値の引数は `never[]` なので、引数の型が分からないまま呼ぶことはできません。
+Because the parameter type is `never[]`, the narrowed function cannot be called blindly without knowing its parameter types.
 
-## 型が保たれる根拠
+## Why the type is sound
 
-外側の関数の型を `F` とします。`F` は `defineForwarder` に渡した型を並べたものです。`F` の各オーバーロードが返すと宣言した型を、外側の関数が実際に返す理由は次のとおりです。
+Let `F` be the combined signature built from the types passed to `defineForwarder`. The wrapper is guaranteed to return the declared return type for each overload of `F` because:
 
-- 外側の関数の型は、ライブラリが `F` として作ります。利用する側はオーバーロードを書かないので、受け付ける引数を広げられません。
-- `args` は読み取り専用です。転送する処理の中で書き換えられません。
-- `forward` に渡せる引数は、今回の呼び出しで受け取った `args` か、`whenArg` で絞ったものだけです。自分で作った配列や、別の呼び出しの引数は渡せません。
-- `forward` に渡せる関数は、`F` を構成する型の値だけです。さらに、その関数が受け付ける引数に `args` が絞られている必要があります。
-- 返せる値は、今回の呼び出しで `forward` が返したものだけです。以前の呼び出しの結果を保存しておき、別の呼び出しで返すことはできません。
+- The wrapper's signature `F` is constructed by the library; callers cannot widen accepted arguments.
+- `args` is read-only and cannot be mutated inside the forwarding body.
+- `forward` accepts only the `args` received in the current invocation (or narrowed via `whenArg`), never fabricated arrays or arguments from another call.
+- `forward` accepts only functions matching a member of `F`, and only when `args` has been narrowed to parameters accepted by that function.
+- The body may only return the token returned by `forward` during the current invocation, preventing cached results from a previous call from leaking across overloads.
 
-この結果、外側の関数はいつも「受け取ったのと同じ引数で、`F` のオーバーロードを持つ関数を呼んだ結果」を返します。その値は、`F` がその引数について宣言した型を持ちます。
+Consequently, the wrapper always returns the result of calling a function in `F` with the exact arguments received, matching the return type `F` declares for those arguments.
 
-## 利用する側が守る前提
+## Caller responsibilities
 
-`whenArg` に渡す `guard` の中身は、TypeScript が確かめません。`guard` が `true` を返した値は、型述語に書いた型を必ず満たす必要があります。
+TypeScript does not verify the body of a `guard` passed to `whenArg`. Whenever `guard` returns `true`, the runtime value must satisfy the type predicate:
 
 ```ts
-const isString = (value: unknown): value is string => typeof value === "number"; // 型では検出できない
+const isString = (value: unknown): value is string => typeof value === "number"; // Not caught by the type checker
 ```
 
-`guard` は、実行時に来た値の形を検査する関数です。外部入力の検証と同じように、型述語と中身を一致させます。
+Treat `guard` like external-input validation: keep its runtime check aligned with its type predicate.
 
-## できないこと
+## Limitations
 
-次の処理は、上の根拠が成り立たないため書けません。
+Patterns that break the soundness guarantees above are intentionally rejected:
 
-- 前の関数の結果で引数を差し替えて、次の関数を呼ぶ処理。差し替えた引数で呼んだ結果は、受け取った引数についての宣言と結び付きません。
-- 転送せずに新しい値を作って返す処理。その値がオーバーロードの宣言どおりだと示す方法がありません。
-- オーバーロードを6つ以上持つ関数の転送。`defineForwarder` の呼び出しがコンパイルエラーになります。一部のオーバーロードを黙って取りこぼすことはありません。
+- Replacing arguments with the output of an earlier function before forwarding to the next one.
+- Constructing and returning a new value without forwarding through `forward`.
+- Forwarding functions with 6 or more overloads (`defineForwarder` fails at compile time rather than silently dropping overloads).
